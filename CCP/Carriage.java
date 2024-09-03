@@ -7,12 +7,20 @@ public class Carriage {
     private Segment currSegment;
     private String carriageState;
 
+    Carriage(int cID, int spd, int dir, Segment cS, String state) {
+        carriageID = cID;
+        speed = spd;
+        direction = dir;
+        currSegment = cS;
+        carriageState = state;
+    }
+
     public String getCarriageData() {
         return carriageID + "\n" + speed+"\n"+direction+"\n"+currSegment.getID();
     }
 
     public void update(String cMsg) {
-        //TODO updates carriage 
+        System.out.println("updated with this message: "+cMsg);
     }
 
     public String getState() {

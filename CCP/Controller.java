@@ -74,7 +74,7 @@ class Controller {
                     currentState = CCPState.Listening;
                 }else if(carriage.getResentCount()>=10) {
                     currentState = CCPState.Error;
-                }else if((System.currentTimeMillis()-carriage.getTimeSent())>= 3000) {//TODO just placed some arbitrary number
+                }else if((System.currentTimeMillis()-carriage.getTimeSent())>= 1000) {//TODO just placed some arbitrary number
                     currentState = CCPState.SendInstruction;
                 }
                 break;
