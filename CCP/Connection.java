@@ -4,8 +4,8 @@ import java.util.LinkedList;
 
 public class Connection {
     private String name;
-    private boolean status;
-    private Queue<String> messages;
+    public boolean status;
+    public Queue<String> messages;
     private long timeSent;
     private int resentCounter;
 
@@ -16,6 +16,8 @@ public class Connection {
         messages = new LinkedList<String>();
     }
     public boolean establishConnection() {
+        if(status) return true;
+
         //TODO
         System.out.println("Established Connection with "+name);
 
@@ -73,10 +75,12 @@ public class Connection {
     }
 
     private boolean isAck(String peek) {
+        //TODO
         return true;
     }
     
     public void sendPacketData(String br17) {
+        resentCounter++;
         // TODO 
         System.out.println("Sent packet with carriage data");
     }

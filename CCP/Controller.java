@@ -9,7 +9,7 @@ class Controller {
     private static Connection carriage = new Connection("Carriage",false);
     private static CCPState currentState = CCPState.Initialize;
 
-    public static void main(String[] args) {     
+    public static void main(String[] args) { 
         while(true) {
             processControl();
         }
@@ -33,7 +33,7 @@ class Controller {
                     currentState = CCPState.MCPCmdReceived;
                 }else if(!carriage.viewMSGRecent().isEmpty()) {
                     currentState = CCPState.BRMsgReceived;
-                }else if(!mcp.getStatus() || !carriage.getStatus()) {
+                }else if(!mcp.getStatus() || !carriage.getStatus()) {//Lost Connection
                     currentState = CCPState.Error;
                 }
                 break;
@@ -44,15 +44,17 @@ class Controller {
                     }else {
                         currentState = CCPState.SendInstruction;
                     }
-                }else {
+                }else {//Invalid msg
                     currentState = CCPState.Error;
                 }
+                break;
             case BRMsgReceived: 
                 String CMsg = carriage.viewMSGRecent();
-                if(!isValid(CMsg)) {
+                if(!isValid(CMsg)) {//If the message is invalid
                     currentState = CCPState.Error;
                 }else {
                     br17.update(CMsg);
+                    carriage.popMSGRecent();
                     if(br17.getState() == "Error") {
                         currentState = CCPState.SendData;
                     }else {
@@ -74,7 +76,7 @@ class Controller {
                     currentState = CCPState.Listening;
                 }else if(carriage.getResentCount()>=10) {
                     currentState = CCPState.Error;
-                }else if((System.currentTimeMillis()-carriage.getTimeSent())>= 1000) {//TODO just placed some arbitrary number
+                }else if((System.currentTimeMillis()-carriage.getTimeSent())>= 100) {//TODO just placed some arbitrary number
                     currentState = CCPState.SendInstruction;
                 }
                 break;
@@ -83,7 +85,7 @@ class Controller {
                     currentState = CCPState.Listening;
                 }else if(mcp.getResentCount()>=10) {
                     currentState = CCPState.Error;
-                }else if((System.currentTimeMillis() - mcp.getTimeSent())>= 3000) {//TODO just placed some arbitrary number
+                }else if((System.currentTimeMillis() - mcp.getTimeSent())>= 100) {//TODO just placed some arbitrary number
                     currentState = CCPState.SendData;
                 }
                 break;
@@ -98,15 +100,20 @@ class Controller {
                 break;
             case Error:
                 //Types: Lost Connection, Never received Ack, Error in MCPCmd, Error in BR data, 
-                if(!mcp.getStatus() || !carriage.getStatus()) {
+                if(!mcp.getStatus() || !carriage.getStatus()) {//lost connection
                     currentState = CCPState.Initialize;
-                }else if(!isValid(mcp.viewMSGRecent())) {
+                }else if(mcp.viewMSGRecent() != "" && !isValid(mcp.viewMSGRecent())) {
                     //TODO What protocol do we want to do if the was an invalid msg
-                }else if(!isValid(carriage.viewMSGRecent())) {
+                    System.out.println("Ignoring invalid message MCP: <"+mcp.popMSGRecent()+">");
+                    currentState = CCPState.Listening;
+                }else if(mcp.viewMSGRecent() != "" && !isValid(carriage.viewMSGRecent())) {
                     //TODO What protocol do we want to do if the was an invalid msg
+                    System.out.println("Ignoring invalid message Br: <"+carriage.popMSGRecent()+">");
+                    currentState = CCPState.Listening;
                 }else {//Never received Ack I assumed that we just ignore this 
                     currentState = CCPState.Listening;
                     carriage.resetResentCount();
+                    mcp.resetResentCount();
                 }
                 break;
         }
