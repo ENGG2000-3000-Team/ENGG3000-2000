@@ -7,12 +7,20 @@ public class Carriage {
     private Segment currSegment;
     private String carriageState;
 
-    Carriage(int cID, int spd, int dir, Segment cS, String state) {
-        carriageID = cID;
+    Carriage(int spd, int dir, Segment cS, String state) {
+        carriageID = 17;
         speed = spd;
         direction = dir;
         currSegment = cS;
         carriageState = state;
+    }
+
+    Carriage() {
+        carriageID = 0;
+        speed = 0;
+        direction = 0;
+        currSegment = 0;
+        carriageState = "state";
     }
 
     public String getCarriageData() {
