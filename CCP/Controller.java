@@ -9,8 +9,8 @@ class Controller {
     private static Connection carriage = new Connection("Carriage",false);
     private static CCPState currentState = CCPState.Initialize;
 
-    public static void main(String[] args) { 
-        while(true) {
+    public static void main(String[] args) {
+        for(;;) {
             processControl();
         }
     }
@@ -18,6 +18,7 @@ class Controller {
     public static void processControl() {
         switch (currentState) {
             case Initialize:
+            System.out.println("INIT");
                 mcp.establishConnection();
                 carriage.establishConnection();
                 if(!mcp.getStatus() || !carriage.getStatus()) {
@@ -38,6 +39,7 @@ class Controller {
                 }
                 break;
             case MCPCmdReceived: //Either gives carriage new instruction or asks status update
+            System.out.println("MCPCmdReceived");
                 if(isValid(mcp.viewMSGRecent())) {
                     if(isStatusReq(mcp.viewMSGRecent())) {
                         currentState = CCPState.SendData;
@@ -49,6 +51,7 @@ class Controller {
                 }
                 break;
             case BRMsgReceived: 
+            System.out.println("BRMsgReceived");
                 String CMsg = carriage.viewMSGRecent();
                 if(!isValid(CMsg)) {//If the message is invalid
                     currentState = CCPState.Error;
@@ -63,6 +66,7 @@ class Controller {
                 }
                 break;
             case SendInstruction:
+            System.out.println("SendInstruction");
                 if(carriage.getStatus()) {
                     carriage.sendPacketCmd(processCmd(mcp.popMSGRecent())); //TODO
                     carriage.setTimeSent(System.currentTimeMillis());
@@ -72,6 +76,7 @@ class Controller {
                 }
                 break;
             case InstructionSent:
+            System.out.println("InstructionSent");
                 if(carriage.gotAck()) {
                     currentState = CCPState.Listening;
                 }else if(carriage.getResentCount()>=10) {
@@ -81,6 +86,7 @@ class Controller {
                 }
                 break;
             case BRDataSent:
+            System.out.println("BRDataSent");
                 if(mcp.gotAck()) {
                     currentState = CCPState.Listening;
                 }else if(mcp.getResentCount()>=10) {
@@ -90,6 +96,7 @@ class Controller {
                 }
                 break;
             case SendData:
+            System.out.println("SendData");
                 if(mcp.getStatus()) {
                     mcp.sendPacketData(br17.getCarriageData()); //TODO
                     mcp.setTimeSent(System.currentTimeMillis());
@@ -99,6 +106,7 @@ class Controller {
                 }
                 break;
             case Error:
+            System.out.println("Error");
                 //Types: Lost Connection, Never received Ack, Error in MCPCmd, Error in BR data, 
                 if(!mcp.getStatus() || !carriage.getStatus()) {//lost connection
                     currentState = CCPState.Initialize;

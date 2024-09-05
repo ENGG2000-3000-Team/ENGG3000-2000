@@ -1,28 +1,58 @@
 package CCP;
 import java.util.Queue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.net.Socket;
 import java.util.LinkedList;
 
 public class Connection {
+    //Message Handeling
     private String name;
-    public boolean status;
+    private boolean status;
     public Queue<String> messages;
     private long timeSent;
     private int resentCounter;
+
+    //Connection Handeling
+    Socket clientSocket;
+    Socket ServerSocket;
+    ExecutorService threadPool;
+
+    private int j;
 
     Connection(String n, boolean s) {
         name = n;
         status = s;
         resentCounter = 0;
         messages = new LinkedList<String>();
+        threadPool = Executors.newFixedThreadPool(10);
     }
     public boolean establishConnection() {
         if(status) return true;
-
         //TODO
         System.out.println("Established Connection with "+name);
 
         status = true;
         return status;
+    }
+
+    public void sendPacketData(String br17) {
+        resentCounter++;
+        // TODO 
+        System.out.println("Sent packet with carriage data");
+    }
+
+    public String recievePacket() {
+        return "Test String";
+    }
+
+    public void startListening() {
+        j++;
+        threadPool.submit(new ListenerThread(this, j));
+    }
+
+    private void close() {
+
     }
 
     public boolean getStatus() {
@@ -37,19 +67,14 @@ public class Connection {
         timeSent = t;
     }
 
-    public void startListening() {
-        //TODO
-        System.out.println("Started Listening for "+name+" message");
-    }
-
-    public String viewMSGRecent() {
+    synchronized public String viewMSGRecent() {
         if(messages.isEmpty()) {
             return "";
         }
         return messages.peek();
     }
 
-    public String popMSGRecent() {
+    synchronized public String popMSGRecent() {
         return messages.poll();
     }
 
@@ -79,9 +104,7 @@ public class Connection {
         return true;
     }
     
-    public void sendPacketData(String br17) {
-        resentCounter++;
-        // TODO 
-        System.out.println("Sent packet with carriage data");
+    synchronized public void addMessage(String s, ListenerThread t) {
+        messages.add(s);
     }
 }
