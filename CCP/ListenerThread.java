@@ -16,12 +16,8 @@ public class ListenerThread implements Runnable{
             System.out.println("Listening on a thread"+id);
             String msg = con.recievePacket();
             if(msg != "") {
-                con.addMessage(msg, this);
+                con.addMessage(msg);
             }
         }
-    }
-
-    synchronized public void interrupt() {
-        Thread.currentThread().interrupt();
     }
 }

@@ -43,7 +43,8 @@ public class Connection {
     }
 
     public String recievePacket() {
-        return "Test String";
+        //TODO
+        return "";
     }
 
     public void startListening() {
@@ -104,7 +105,7 @@ public class Connection {
         return true;
     }
     
-    synchronized public void addMessage(String s, ListenerThread t) {
+    synchronized public void addMessage(String s) {
         messages.add(s);
     }
 }
