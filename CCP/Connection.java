@@ -28,7 +28,7 @@ public class Connection {
         msgAttempts = 0;
         messages = new LinkedList<String>();
         consideringMsg = "";
-        threadPool = Executors.newFixedThreadPool(10);
+        threadPool = Executors.newFixedThreadPool(4);
     }
     public void sendInit() {
         if(status) return;
@@ -43,7 +43,7 @@ public class Connection {
         // TODO 
     }
 
-    public String recievePacket() {
+    synchronized public String recievePacket() {
         //TODO
         return "";
     }

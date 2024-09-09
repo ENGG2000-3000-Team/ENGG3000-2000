@@ -13,7 +13,6 @@ public class ListenerThread implements Runnable{
             String msg = con.recievePacket();
             if(msg != "") {
                 con.addMessage(msg);
-                break;
             }
         }
     }
