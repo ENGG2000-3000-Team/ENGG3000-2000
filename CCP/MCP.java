@@ -1,6 +1,6 @@
 package CCP;
 public class MCP extends Connection{
-    MCP(String n, boolean s) {
+    MCP() {
         super("MCP",false);
     }
 

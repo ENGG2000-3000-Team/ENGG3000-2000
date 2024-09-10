@@ -17,8 +17,8 @@ class Controller {
     private static CCPState currentState = CCPState.Initialize;
 
     public static void main(String[] args) {
-        br17Con = new BR17("BR17", false);
-        mcp = new MCP("MCP", false);
+        br17Con = new BR17();
+        mcp = new MCP();
         br17 = new Carriage();
         for (;;) {
             processControl();
