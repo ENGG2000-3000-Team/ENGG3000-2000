@@ -5,6 +5,13 @@ import java.util.concurrent.Executors;
 import java.net.Socket;
 import java.util.LinkedList;
 
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
+// import com.google.gson.Gson;
+import java.util.Map;
+
 public abstract class Connection {
     protected String name;
     protected boolean status;
@@ -18,21 +25,22 @@ public abstract class Connection {
     protected int msgAttempts;
 
     //Connection Handeling
-    protected Socket clientSocket;
-    protected Socket ServerSocket;
+    protected DatagramSocket socket;
+    protected int port;
     protected ExecutorService threadPool;
 
-    Connection(String n, boolean s) {
+    Connection(String n, boolean s, int p) {
         name = n;
         status = s;
         msgAttempts = 0;
         messages = new LinkedList<String>();
         consideringMsg = "";
         threadPool = Executors.newFixedThreadPool(4);
+        port = p;
+        // socket = new DatagramSocket(port);
     }
 
     synchronized public String recievePacket() {
-        //TODO
         return "";
     }
 
