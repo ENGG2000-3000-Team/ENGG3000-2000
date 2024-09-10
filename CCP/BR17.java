@@ -1,7 +1,7 @@
 package CCP;
 
 public class BR17 extends Connection{
-    BR17(String n, boolean s) {
+    BR17() {
         super("BR17",false);
     }
     public void sendInit() {
