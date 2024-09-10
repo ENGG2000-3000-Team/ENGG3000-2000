@@ -5,22 +5,22 @@ import java.util.concurrent.Executors;
 import java.net.Socket;
 import java.util.LinkedList;
 
-public class Connection {
-    private String name;
-    private boolean status;
+public abstract class Connection {
+    protected String name;
+    protected boolean status;
 
     //Message Handeling
-    private Queue<String> messages;
-    private String consideringMsg;
+    protected Queue<String> messages;
+    protected String consideringMsg;
 
-    private long lastMsgTime;
-    private long timeSent;
-    private int msgAttempts;
+    protected long lastMsgTime;
+    protected long timeSent;
+    protected int msgAttempts;
 
     //Connection Handeling
-    private Socket clientSocket;
-    private Socket ServerSocket;
-    private ExecutorService threadPool;
+    protected Socket clientSocket;
+    protected Socket ServerSocket;
+    protected ExecutorService threadPool;
 
     Connection(String n, boolean s) {
         name = n;
@@ -29,18 +29,6 @@ public class Connection {
         messages = new LinkedList<String>();
         consideringMsg = "";
         threadPool = Executors.newFixedThreadPool(4);
-    }
-    public void sendInit() {
-        if(status) return;
-        timeSent = System.currentTimeMillis();
-        msgAttempts++;
-        
-        //TODO
-    }
-
-    public void sendPacketData(String br17) {
-        msgAttempts++;
-        // TODO 
     }
 
     synchronized public String recievePacket() {
@@ -53,11 +41,6 @@ public class Connection {
         msgAttempts = 0;
         status = true;
         threadPool.submit(new ListenerThread(this));
-    }
-
-    public void sendPacketMsg(String cmd) {
-        msgAttempts++;
-        //TODO
     }
 
     synchronized public void addMessage(String s) {
