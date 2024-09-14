@@ -1,21 +1,24 @@
-#include <ESP8266WiFi.h>
+#include <WiFi.h>
 
 // Define motor pins
-const int motorPin1 = D1; // Motor control pin 1
-const int motorPin2 = D2; // Motor control pin 2
-const int motorPWM = D3;  // PWM pin for motor speed
+const int motorPin1 = 18; // Motor control pin 1
+const int motorPin2 = 19; // Motor control pin 2
+const int motorPWM = 21;  // PWM pin for motor speed
 
 // Define LED pins
-const int ledRedPin = D5;
-const int ledGreenPin = D6;
-const int ledBluePin = D7;
+const int ledRedPin = 16;
+const int ledGreenPin = 5;
+const int ledBluePin = 17;
+
+const int ledRedPin2 = 15;
+const int ledGreenPin2 = 4;
+const int ledBluePin2 = 2;
 
 // Define IR sensor pin
-const int irSensorPin = D4;
+//const int irSensorPin = D4;
 
 // WiFi credentials
 const char* ssid = "ENGG2K3K";
-const char* password = "your_wifi_password";  //no pwd so remove this
 
 // Motor control variables
 int motorSpeed = 0;
@@ -37,7 +40,7 @@ void setup() {
   pinMode(ledBluePin, OUTPUT);
 
   // Set IR sensor pin as input
-  pinMode(irSensorPin, INPUT);
+  //pinMode(irSensorPin, INPUT);
 
   // Initialize serial communication
   Serial.begin(9600);
@@ -51,10 +54,11 @@ void loop() {
   // For demonstration, we'll use hardcoded states
 
   String carriageState = "In Transit";  // Replace with actual received state
+  //String carriageState = "Idle";
 
   // Read the IR sensor value
-  int irSensorValue = digitalRead(irSensorPin);
-
+  //int irSensorValue = digitalRead(irSensorPin);
+    
   // Control motor and LEDs based on the state and IR sensor value
   if (carriageState == "Idle") {
     stopMotor();
@@ -62,7 +66,7 @@ void loop() {
   } else if (carriageState == "In Transit") {
     moveMotorForward();
     setLEDColor(0, 0, 255);  // Flashing Blue
-  } else if (carriageState == "Stop Arrival" || irSensorValue == LOW) {
+  } else if (carriageState == "Stop Arrival") {
     // Assume IR sensor detects the stop when LOW
     stopMotor();
     setLEDColor(255, 255, 0);  // Yellow
@@ -93,11 +97,12 @@ void loop() {
 // Connect to WiFi
 void connectToWiFi() {
   Serial.println("Connecting to WiFi...");
-  WiFi.begin(ssid, password);
+  WiFi.begin(ssid);
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     Serial.println("Connecting...");
+    Serial.println(WiFi.status());
   }
 
   Serial.println("Connected to WiFi");
@@ -107,13 +112,37 @@ void connectToWiFi() {
 void moveMotorForward() {
   digitalWrite(motorPin1, HIGH);
   digitalWrite(motorPin2, LOW);
-  analogWrite(motorPWM, 255);  // Full speed
+  //analogWrite(motorPWM, 100);  // Full speed
+  // for(int i=100; i<=255; i=i+5){
+  //   analogWrite(motorPWM, i);  // Full speed
+  //   delay(500);
+  //   Serial.println(i);
+  // }
+
+while (true){
+  while (Serial.available() > 0)
+    {
+      int speed;
+      speed = Serial.parseInt();  // parseInt() reads in the first integer value from the Serial Monitor.
+      speed = constrain(speed, 0, 255); // constrains the speed between 0 and 255 because analogWrite() only works in this range.
+
+      Serial.print("Setting speed to ");  // feedback and prints out the speed that you entered.
+      Serial.println(speed);
+
+      analogWrite(motorPWM, speed);  // sets the speed of the motor.
+    }
+    }
 }
 
 void stopMotor() {
   digitalWrite(motorPin1, LOW);
   digitalWrite(motorPin2, LOW);
-  analogWrite(motorPWM, 0);  // Stop motor
+  //analogWrite(motorPWM, 0);  // Stop motor
+  for(int i=255; i>=0; i=i-5){
+    analogWrite(motorPWM, i);  // Full speed
+    delay(500);
+    Serial.println(i);
+  }
 }
 
 // Control LED functions
@@ -122,3 +151,5 @@ void setLEDColor(int red, int green, int blue) {
   analogWrite(ledGreenPin, green);
   analogWrite(ledBluePin, blue);
 }
+
+
