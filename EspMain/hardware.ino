@@ -52,6 +52,7 @@ void setup() {
 void loop() {
   // Here you would receive and parse JSON data via TCP/UDP from the CCP
   // For demonstration, we'll use hardcoded states
+  netCode();
 
   String carriageState = "In Transit";  // Replace with actual received state
   //String carriageState = "Idle";
@@ -92,6 +93,32 @@ void loop() {
 
   // Add delay for LED flashing effect
   delay(500);
+}
+
+void netCode() {
+  int packetSize = Udp.parsePacket();
+  if (packetSize) {
+    // receive incoming UDP packets
+    Serial.printf("Received %d bytes from %s, port %d\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
+    int len = Udp.read(incomingPacket, 255);
+    if (len > 0) {
+      incomingPacket[len] = 0;
+    }
+    Serial.printf("UDP packet contents: %s\n", incomingPacket);
+
+    //if Packet is status request send back status else if exec cmd save new status
+    if (incomingPacket[0] == 'S') {  //Arbitrary Val checks for stat request
+      Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
+      Udp.print(carriageState);
+      Udp.endPacket();
+    } else if (incomingPacket[0] == 'E') {  //TODO Saves new status if execute cmd
+      //TODO Message Handeling needs to be done here, with speed etc
+      carriageState = "";
+      for (int i = 1; i < 21; i++) {
+        carriageState = carriageState + incomingPacket[i];
+      }
+    }
+  }
 }
 
 // Connect to WiFi
