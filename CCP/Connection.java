@@ -1,8 +1,8 @@
 package CCP;
 import java.util.Queue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.net.Socket;
+import java.net.DatagramSocket;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
 import java.util.LinkedList;
 
 public abstract class Connection {
@@ -10,6 +10,7 @@ public abstract class Connection {
     protected boolean status;
 
     //Message Handeling
+    //TODO adds message class so messages have id's
     protected Queue<String> messages;
     protected String consideringMsg;
 
@@ -18,9 +19,9 @@ public abstract class Connection {
     protected int msgAttempts;
 
     //Connection Handeling
-    protected Socket clientSocket;
-    protected Socket ServerSocket;
-    protected ExecutorService threadPool;
+    protected DatagramSocket socket;
+
+    protected byte[] buf;
 
     Connection(String n, boolean s) {
         name = n;
@@ -28,27 +29,38 @@ public abstract class Connection {
         msgAttempts = 0;
         messages = new LinkedList<String>();
         consideringMsg = "";
-        threadPool = Executors.newFixedThreadPool(4);
+
+        try {
+            socket = new DatagramSocket();
+        }catch(Exception e) {
+            System.out.println(""+e);
+        }
     }
 
-    synchronized public String recievePacket() {
-        //TODO
-        return "";
+    public String recievePacket() {
+        DatagramPacket packet = new DatagramPacket(buf, buf.length);
+        try {
+            socket.receive(packet);
+        }catch(Exception e) {
+            System.out.println(""+e);
+        }
+        String received = new String(packet.getData(), 0, packet.getLength());
+
+        return received;
     }
 
     public void startListening() {
         lastMsgTime = System.currentTimeMillis();
         msgAttempts = 0;
         status = true;
-        threadPool.submit(new ListenerThread(this));
     }
 
-    synchronized public void addMessage(String s) {
+    public void addMessage(String s) {
         messages.add(s);
         lastMsgTime = System.currentTimeMillis();
     }
 
-    synchronized public String considerMsgRecent() {
+    public String considerMsgRecent() {
         if(messages.isEmpty()) {
             return "";
         }
@@ -61,6 +73,7 @@ public abstract class Connection {
     }
 
     private void close() {
+        socket.close();
     }
 
     public boolean gotAck() {

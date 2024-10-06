@@ -12,13 +12,13 @@ class Controller {
         Error
     }
     private static Carriage br17;
-    private static MCP mcp;
-    private static BR17 br17Con;
+    private static Connection mcp;
+    private static Connection br17Con;
     private static CCPState currentState = CCPState.Initialize;
 
     public static void main(String[] args) {
-        br17Con = new BR17();
-        mcp = new MCP();
+        br17Con = new Connection("BR17", false);
+        mcp = new Connection("MCP", false);
         br17 = new Carriage();
         for (;;) {
             processControl();
@@ -58,6 +58,8 @@ class Controller {
             case Listening://Possibly chnage the way it checks times
                 System.out.println("Listening");
                 long currL = System.currentTimeMillis();
+                mcp.recievePacket();
+                br17Con.recievePacket();
 
                 if (!mcp.getMessages().isEmpty()) {
                     mcp.considerMsgRecent();
@@ -66,7 +68,7 @@ class Controller {
                     br17Con.considerMsgRecent();
                     currentState = CCPState.BRMsgReceived;
                 } else if((currL - br17Con.getlastMsgTime() > 2500)) {
-                    br17Con.sendPacketMsg("Get_BR_Status");//TODO change string
+                    br17Con.sendPacket("Get_BR_Status");//TODO change string
                     currentState = CCPState.SentStateREQ;
                 }else if ((currL - mcp.getlastMsgTime() > 2000)) { //Lost Connection
                     mcp.setStatus(false);
@@ -103,7 +105,7 @@ class Controller {
                 break;
             case SendInstruction:
                 System.out.println("SendInstruction");
-                br17Con.sendPacketMsg(processCmd(mcp.viewConsidered()));
+                br17Con.sendPacket(processCmd(mcp.viewConsidered()));
                 currentState = CCPState.Listening;
                 break;
             case SentStateREQ:
@@ -116,19 +118,19 @@ class Controller {
                     currentState = CCPState.Error;
                 }else if((System.currentTimeMillis() - br17Con.getTimeSent())>= 100) {//TODO just placed some arbitrary number
                     System.out.println(br17Con.getAttempts());
-                    br17Con.sendPacketMsg("Get_BR_Status");//TODO change string
+                    br17Con.sendPacket("Get_BR_Status");//TODO change string
                 }
                 break;
             case SendData:
                 System.out.println("SendData");
-                mcp.sendPacketData(br17.getCarriageData()); //TODO
+                mcp.sendPacket(br17.getCarriageData()); //TODO
                 currentState = CCPState.Listening;
                 break;
             case Error:
                 System.out.println("Error");
                 //Types: Lost Connection with MCP and/or BR
                 if (!mcp.getStatus()) { //lost connection with MCP
-                    br17Con.sendPacketMsg("Stop at Checkpoint");
+                    br17Con.sendPacket("Stop at Checkpoint");
                     mcp.resetMsgAttempts();
                     currentState = CCPState.Initialize;
                 }

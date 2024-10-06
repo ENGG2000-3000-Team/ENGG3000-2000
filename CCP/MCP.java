@@ -1,19 +1,41 @@
 package CCP;
-public class MCP extends Connection{
-    MCP() {
-        super("MCP",false);
-    }
 
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+
+public class MCP extends Connection{
+    protected InetAddress address;
+    MCP() {
+        super("MCP", false);
+
+        try {
+            address = InetAddress.getByAddress(IPAddress);
+        } catch (Exception e) {
+            System.out.println(""+e);
+        }
+    }
+    
     public void sendInit() {
         if(status) return;
         timeSent = System.currentTimeMillis();
         msgAttempts++;
-        
-        //TODO
+
+        byte[] buffer = "Hello CCP17 Exists".getBytes();
+        DatagramPacket packet = new DatagramPacket(buffer, buffer.length,address, 0000);
+        try {
+            socket.send(packet);
+        }catch(Exception e) {
+            System.out.println(""+e);
+        }
     }
 
-    public void sendPacketData(String br17) {//Go to MCP
-        msgAttempts++;
-        // TODO 
+    public void sendPacket(String msg) {
+        byte[] buffer = msg.getBytes();
+        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, 0000);
+        try {
+            socket.send(packet);
+        }catch(Exception e) {
+            System.out.println(""+e);
+        }
     }
 }
