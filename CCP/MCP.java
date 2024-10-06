@@ -5,6 +5,7 @@ import java.net.InetAddress;
 
 public class MCP extends Connection{
     protected InetAddress address;
+    byte IPAddress[] = {10,20,30,1};
     MCP() {
         super("MCP", false);
 

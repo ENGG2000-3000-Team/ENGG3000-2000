@@ -12,13 +12,13 @@ class Controller {
         Error
     }
     private static Carriage br17;
-    private static Connection mcp;
-    private static Connection br17Con;
+    private static MCP mcp;
+    private static BR17 br17Con;
     private static CCPState currentState = CCPState.Initialize;
 
     public static void main(String[] args) {
-        br17Con = new Connection("BR17", false);
-        mcp = new Connection("MCP", false);
+        br17Con = new BR17();
+        mcp = new MCP();
         br17 = new Carriage();
         for (;;) {
             processControl();

@@ -1,4 +1,5 @@
 #include <WiFi.h>
+#include <WiFiUdp.h>
 
 // Define motor pins
 const int motorPin1 = 18; // Motor control pin 1
@@ -19,6 +20,12 @@ const int ledBluePin2 = 2;
 
 // WiFi credentials
 const char* ssid = "ENGG2K3K";
+IPAddress staticIP(10,20,30,117);
+IPAddress gateway(10,20,30,1);   // Replace this with your gateway IP Addess
+IPAddress subnet(255, 255, 255, 0);
+WiFiUDP udp;
+char packetBuffer[255];
+unsigned int localPort = 9999;
 
 // Motor control variables
 int motorSpeed = 0;
@@ -27,6 +34,11 @@ int motorSpeed = 0;
 int ledRed = 0;
 int ledGreen = 0;
 int ledBlue = 0;
+//https://randomnerdtutorials.com/esp32-useful-wi-fi-functions-arduino/
+//https://www.baeldung.com/udp-in-java
+//https://www.aranacorp.com/en/communication-between-two-esp32s-via-udp/
+//Carriage State
+String carriageState = "In Transit";
 
 void setup() {
   // Set motor pins as output
@@ -47,15 +59,13 @@ void setup() {
 
   // Connect to WiFi
   connectToWiFi();
+  udp.begin(localPort);
 }
 
 void loop() {
   // Here you would receive and parse JSON data via TCP/UDP from the CCP
   // For demonstration, we'll use hardcoded states
   netCode();
-
-  String carriageState = "In Transit";  // Replace with actual received state
-  //String carriageState = "Idle";
 
   // Read the IR sensor value
   //int irSensorValue = digitalRead(irSensorPin);
@@ -96,26 +106,26 @@ void loop() {
 }
 
 void netCode() {
-  int packetSize = Udp.parsePacket();
+  int packetSize = udp.parsePacket();
   if (packetSize) {
     // receive incoming UDP packets
-    Serial.printf("Received %d bytes from %s, port %d\n", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
-    int len = Udp.read(incomingPacket, 255);
+    Serial.printf("Received %d bytes from %s, port %d\n", packetSize, udp.remoteIP().toString().c_str(), udp.remotePort());
+    int len = udp.read(packetBuffer, 255);
     if (len > 0) {
-      incomingPacket[len] = 0;
+      packetBuffer[len - 1] = 0;
     }
-    Serial.printf("UDP packet contents: %s\n", incomingPacket);
+    Serial.printf("UDP packet contents: %s\n", packetBuffer);
 
     //if Packet is status request send back status else if exec cmd save new status
-    if (incomingPacket[0] == 'S') {  //Arbitrary Val checks for stat request
-      Udp.beginPacket(Udp.remoteIP(), Udp.remotePort());
-      Udp.print(carriageState);
-      Udp.endPacket();
-    } else if (incomingPacket[0] == 'E') {  //TODO Saves new status if execute cmd
+    if (packetBuffer[0] == 'S') {  //Arbitrary Val checks for stat request
+      udp.beginPacket(gateway, 3017);
+      udp.print(carriageState);
+      udp.endPacket();
+    } else if (packetBuffer[0] == 'E') {  //TODO Saves new status if execute cmd
       //TODO Message Handeling needs to be done here, with speed etc
       carriageState = "";
       for (int i = 1; i < 21; i++) {
-        carriageState = carriageState + incomingPacket[i];
+        carriageState = carriageState + packetBuffer[i];
       }
     }
   }
@@ -123,6 +133,10 @@ void netCode() {
 
 // Connect to WiFi
 void connectToWiFi() {
+  if (WiFi.config(staticIP, gateway, subnet) == false) {
+    Serial.println("Configuration failed.");
+  }
+
   Serial.println("Connecting to WiFi...");
   WiFi.begin(ssid);
 
@@ -178,5 +192,3 @@ void setLEDColor(int red, int green, int blue) {
   analogWrite(ledGreenPin, green);
   analogWrite(ledBluePin, blue);
 }
-
-
