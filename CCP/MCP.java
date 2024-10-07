@@ -1,6 +1,7 @@
 package CCP;
 
 import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
 
 import org.json.simple.JSONObject;
@@ -19,7 +20,7 @@ public class MCP extends Connection{
     }
     
     @SuppressWarnings("unchecked")
-    public void sendInit() {
+    public void sendInit(DatagramSocket socket) {
         if(status) return;
         timeSent = System.currentTimeMillis();
         msgAttempts++;
@@ -40,13 +41,13 @@ public class MCP extends Connection{
     }
 
     @SuppressWarnings("unchecked")
-    public void sendPacket(String msg) {
+    public void sendPacket(String msg, DatagramSocket socket) {
         JSONObject msgJ = new JSONObject();
         msgJ.put("client_type", "CCP");
         msgJ.put("client_id", "BR17");
         msgJ.put("sequence_number", generateRandom());
 
-        if(msg.isEmpty()) {
+        if(!msg.isEmpty()) {
             msgJ.put("message", "STAT");
             msgJ.put("status", msg);
         }else {

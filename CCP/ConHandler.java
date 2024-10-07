@@ -9,11 +9,11 @@ import org.json.simple.parser.ParseException;
 
 public class ConHandler {
     //Connection Handeling
-    protected DatagramSocket socket;
-    protected byte[] buf;
-    JSONParser parser;
-    MCP mcp;
-    BR17 br17Con;
+    private DatagramSocket socket;
+    private byte[] buf;
+    private JSONParser parser;
+    private MCP mcP;
+    private BR17 br17Con;
 
     ConHandler() {
         try {
@@ -24,7 +24,7 @@ public class ConHandler {
 
         parser = new JSONParser();
         br17Con = new BR17();
-        mcp = new MCP();
+        mcP = new MCP();
     }
 
     public void recievePacket() {
@@ -43,13 +43,50 @@ public class ConHandler {
         }
 
         if(msg.get("client_type").equals("mcp")) {
-            mcp.addMessage(msg);
+            mcP.addMessage(msg);
         }else {
             br17Con.addMessage(msg);
         }
     }
 
-    private void close() {
+    public void sendInits() {
+        mcP.sendInit(socket);
+        br17Con.sendInit(socket);
+    }
+
+    public void sendEXEC(String cmd) {
+        br17Con.sendPacket(cmd,socket);
+    }
+
+    public void sendSTATRQ() {
+        br17Con.sendPacket("",socket);
+    }
+
+    public void sendSTAT(String state) {
+        mcP.sendPacket(state,socket);
+    }
+
+    public void sendAKEXC() {
+        mcP.sendPacket("",socket);
+    }
+
+    public boolean gotMCPAck() {
+        return !mcP.getStatus() && mcP.gotAck();
+    }
+
+    public boolean gotBRAck() {
+        return !br17Con.getStatus() && br17Con.gotAck();
+    }
+
+    public MCP getMCP() {
+        return mcP;
+    }
+
+    public BR17 getBR() {
+        return br17Con;
+    }
+
+    public void close() {
         socket.close();
     }
 }

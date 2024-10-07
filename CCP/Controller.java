@@ -14,11 +14,11 @@ class Controller {
         Error
     }
     private static Carriage br17;
-    private static ConHandler connectionHandler;
+    private static ConHandler cHandler;
     private static CCPState currentState = CCPState.Initialize;
 
     public static void main(String[] args) {
-        connectionHandler = new ConHandler();
+        cHandler = new ConHandler();
         br17 = new Carriage();
         for (;;) {
             processControl();
@@ -30,8 +30,7 @@ class Controller {
             case Initialize:
                 System.out.println("INIT");
 
-                connectionHandler.mcp.sendInit();
-                connectionHandler.br17Con.sendInit();
+                cHandler.sendInits();
 
                 currentState = CCPState.AwaitingACKs;
                 break;
@@ -39,103 +38,100 @@ class Controller {
                 System.out.println("AwaitingACKs");
                 long currA = System.currentTimeMillis();
 
-                if (!connectionHandler.mcp.getStatus() && connectionHandler.mcp.gotAck()) {
-                    connectionHandler.mcp.startListening();
+                if (cHandler.gotMCPAck()) {
+                    cHandler.getMCP().startListening();
                 }
-                if (!connectionHandler.br17Con.getStatus() && connectionHandler.br17Con.gotAck()) {
-                    br17Con.startListening();
+                if (cHandler.gotBRAck()) {
+                    cHandler.getBR().startListening();
                 }
-
-                if (mcp.getStatus() && br17Con.getStatus()) {
+                if (cHandler.getMCP().getStatus() && cHandler.getBR().getStatus()) {
                     currentState = CCPState.Listening;
-                } else if (mcp.getAttempts() >= 10 || br17Con.getAttempts() >= 10) {
+                } else if (cHandler.getMCP().getAttempts() >= 10 || cHandler.getBR().getAttempts() >= 10) {
                     currentState = CCPState.Error; //Could not initalize with MCP and/or carriage
-                } else if ((currA - mcp.getTimeSent() >= 100) && (currA - br17Con.getTimeSent() >= 100)) { //TODO just placed some arbitrary number
-                    mcp.sendInit();
-                    br17Con.sendInit();
+                } else if ((currA - cHandler.getMCP().getTimeSent() >= 1000) && (currA - cHandler.getBR().getTimeSent() >= 1000)) { //TODO just placed some arbitrary number
+                    cHandler.sendInits();
                 }
                 break;
             case Listening:
                 System.out.println("Listening");
                 long currL = System.currentTimeMillis();
-                mcp.recievePacket();
-                br17Con.recievePacket();
+                cHandler.recievePacket();
 
-                if (!mcp.getMessages().isEmpty()) {
-                    mcp.considerMsgRecent();
+                if (!cHandler.getMCP().getMessages().isEmpty()) {
+                    cHandler.getMCP().considerMsgRecent();
                     currentState = CCPState.MCPCmdReceived;
-                } else if (!br17Con.getMessages().isEmpty()) {
-                    br17Con.considerMsgRecent();
+                } else if (!cHandler.getBR().getMessages().isEmpty()) {
+                    cHandler.getBR().considerMsgRecent();
                     currentState = CCPState.BRMsgReceived;
-                } else if((currL - br17Con.getlastMsgTime() > 2000)) {
-                    br17Con.sendPacket("");
+                } else if((currL - cHandler.getBR().getlastMsgTime() > 2000)) {
+                    cHandler.sendSTATRQ();
                     currentState = CCPState.SentStateREQ;
-                }else if ((currL - mcp.getlastMsgTime() > 2000)) {
-                    mcp.setStatus(false);
+                }else if ((currL - cHandler.getMCP().getlastMsgTime() > 2000)) {
+                    cHandler.getMCP().setStatus(false);
                     currentState = CCPState.Error;
                 }
                 
                 break;
             case MCPCmdReceived: //Either gives carriage new instruction or asks status update
                 System.out.println("MCPCmdReceived");
-                if (isValid(mcp.viewConsidered(),1)) {
-                    if (isStatusReq(mcp.viewConsidered())) {
+                if (isValid(cHandler.getMCP().viewConsidered(),1)) {
+                    if (isStatusReq(cHandler.getMCP().viewConsidered())) {
                         currentState = CCPState.SendData;
                     } else {
                         currentState = CCPState.SendInstruction;
                     }
                 } else { //Invalid msg
-                    System.out.println("Ignoring invalid message MCP: <" + mcp.viewConsidered() + ">");
+                    System.out.println("Ignoring invalid message MCP: <" + cHandler.getMCP().viewConsidered() + ">");
                     currentState = CCPState.Listening;
                 }
                 break;
             case BRMsgReceived:
                 System.out.println("BRMsgReceived");
-                if (isValid(br17Con.viewConsidered(), 0)) { //If the message is invalid
-                    br17.update(br17Con.viewConsidered());
+                if (isValid(cHandler.getBR().viewConsidered(), 0)) { //If the message is invalid
+                    br17.update(cHandler.getBR().viewConsidered());
                     if (br17.getState() == "Error" || br17.getState() == "Stopped" || br17.getState() == "AtStation") {
                         currentState = CCPState.SendData;
                     } else {
                         currentState = CCPState.Listening;
                     }
                 } else {
-                    System.out.println("Ignoring invalid message MCP: <" + br17Con.viewConsidered() + ">");
+                    System.out.println("Ignoring invalid message MCP: <" + cHandler.getBR().viewConsidered() + ">");
                     currentState = CCPState.Listening;
                 }
                 break;
             case SendInstruction:
                 System.out.println("SendInstruction");
-                br17Con.sendPacket((String)mcp.viewConsidered().get("action"));
+                cHandler.sendEXEC((String)cHandler.getMCP().viewConsidered().get("action"));
                 currentState = CCPState.Listening;
                 break;
             case SentStateREQ:
                 System.out.println("SentStateREQ");
-                if(!br17Con.getMessages().isEmpty()) {
-                    br17Con.resetMsgAttempts();
+                if(!cHandler.getBR().getMessages().isEmpty()) {
+                    cHandler.getBR().resetMsgAttempts();
                     currentState = CCPState.BRMsgReceived;
-                }else if(br17Con.getAttempts() >= 10) {
-                    br17Con.setStatus(false);
+                }else if(cHandler.getBR().getAttempts() >= 3) {
+                    cHandler.getBR().setStatus(false);
                     currentState = CCPState.Error;
-                }else if((System.currentTimeMillis() - br17Con.getTimeSent())>= 100) {//TODO just placed some arbitrary number
-                    System.out.println(br17Con.getAttempts());
-                    br17Con.sendPacket("Get_BR_Status");//TODO change string
+                }else if((System.currentTimeMillis() - cHandler.getBR().getTimeSent())>= 1000) {
+                    System.out.println(cHandler.getBR().getAttempts());
+                    cHandler.sendSTATRQ();
                 }
                 break;
             case SendData:
                 System.out.println("SendData");
-                mcp.sendPacket(br17.getState());
+                cHandler.sendSTAT(br17.getState());
                 currentState = CCPState.Listening;
                 break;
             case Error:
                 System.out.println("Error");
                 //Types: Lost Connection with MCP and/or BR
-                if (!mcp.getStatus()) { //lost connection with MCP
-                    br17Con.sendPacket("Stop at Checkpoint");
-                    mcp.resetMsgAttempts();
+                if (!cHandler.getMCP().getStatus()) { //lost connection with MCP
+                    cHandler.sendEXEC("STOP");
+                    cHandler.getMCP().resetMsgAttempts();
                     currentState = CCPState.Initialize;
                 }
-                if (!br17Con.getStatus()) { //lost connection with br17
-                    br17Con.resetMsgAttempts();
+                if (!cHandler.getBR().getStatus()) { //lost connection with br17
+                    cHandler.getBR().resetMsgAttempts();
                     currentState = CCPState.Initialize;
                 }
                 break;
