@@ -12,7 +12,6 @@ public abstract class Connection {
     protected boolean status;
 
     //Message Handeling
-    //TODO adds message class so messages have id's
     protected JSONParser parser;
     protected Queue<JSONObject> messages;
     protected JSONObject consideringMsg;
@@ -21,40 +20,12 @@ public abstract class Connection {
     protected long timeSent;
     protected int msgAttempts;
 
-    //Connection Handeling
-    protected DatagramSocket socket;
-
-    protected byte[] buf;
-
     Connection(String n, boolean s) {
         name = n;
         status = s;
         msgAttempts = 0;
         messages = new LinkedList<JSONObject>();
         consideringMsg = null;
-
-        try {
-            socket = new DatagramSocket();
-        }catch(Exception e) {
-            System.out.println(e);
-        }
-        parser = new JSONParser();
-    }
-
-    public void recievePacket() {
-        DatagramPacket packet = new DatagramPacket(buf, buf.length);
-        try {
-            socket.receive(packet);
-        }catch(Exception e) {
-            System.out.println(e);
-        }
-        String received = new String(packet.getData(), 0, packet.getLength());
-        try {
-            JSONObject jsonObject = (JSONObject) parser.parse(received);
-            addMessage(jsonObject);
-        } catch (ParseException e) {
-            System.out.println(e);
-        }
     }
 
     public void startListening() {
@@ -80,10 +51,6 @@ public abstract class Connection {
         return consideringMsg;
     }
 
-    private void close() {
-        socket.close();
-    }
-
     public boolean gotAck() {
         if(isAck(messages.peek())) {
             messages.poll();
@@ -100,8 +67,10 @@ public abstract class Connection {
         msgAttempts = 0;
     }
 
-    private boolean isAck(JSONObject peek) {
-        //TODO
+    private boolean isAck(JSONObject object) {
+        if(object == null || !object.get("message").equals("AKIN")){
+            return false;
+        }
         return true;
     }
 
@@ -123,5 +92,9 @@ public abstract class Connection {
 
     public Queue<JSONObject> getMessages() {
         return messages;
+    }
+
+    protected Integer generateRandom() {
+        return (int) (Math.random() * (30000 - 1000 + 1) + 1000);
     }
 }

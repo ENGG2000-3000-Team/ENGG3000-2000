@@ -6,7 +6,7 @@ import org.json.simple.JSONObject;
 
 public class BR17 extends Connection{
     protected InetAddress address;
-    byte IPAddress[] = {10,20,30,117};
+    protected byte IPAddress[] = {10,20,30,117};
     BR17() {
         super("BR17", false);
 
@@ -17,37 +17,48 @@ public class BR17 extends Connection{
         }
     }
 
+    @SuppressWarnings("unchecked")
     public void sendInit() {
         if(status) return;
         timeSent = System.currentTimeMillis();
         msgAttempts++;
 
-        JSONObject msg = new JSONObject();
-        msg.put("client_type", "CCP");
-        msg.put("message", "CCIN");
-        msg.put("client_id", "BR17");
-        msg.put("sequence_number", generateRandom());
+        JSONObject msgJ = new JSONObject();
+        msgJ.put("client_type", "CCP");
+        msgJ.put("message", "CCIN");
+        msgJ.put("client_id", "BR17");
+        msgJ.put("sequence_number", generateRandom());
 
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, 0000);
+        byte[] buffer = msgJ.toJSONString().getBytes();
+
+        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, 3017);
         try {
             socket.send(packet);
         }catch(Exception e) {
-            System.out.println(""+e);
+            System.out.println("Sending Error"+e);
         }
     }
 
+    @SuppressWarnings("unchecked")
     public void sendPacket(String msg) {
-        byte[] buffer = msg.getBytes(); //Change for JSON msg
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, 0000);
+        JSONObject msgJ = new JSONObject();
+        msgJ.put("client_type", "CCP");
+        msgJ.put("client_id", "BR17");
+        msgJ.put("sequence_number", generateRandom());
+
+        if(msg.isEmpty()) {
+            msgJ.put("message", "EXEC");
+            msgJ.put("cmd", msg);
+        }else {
+            msgJ.put("message", "STATRQ");
+        }
+
+        byte[] buffer = msgJ.toJSONString().getBytes();
+        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, 3017);
         try {
             socket.send(packet);
         }catch(Exception e) {
             System.out.println(""+e);
         }
-    }
-    
-
-    private Integer generateRandom() {
-        return (int) (Math.random() * (30000 - 1000 + 1) + 1000);
     }
 }

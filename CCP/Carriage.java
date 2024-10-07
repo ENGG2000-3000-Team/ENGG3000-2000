@@ -15,10 +15,6 @@ public class Carriage {
         carriageState = "state";
     }
 
-    public String getCarriageData() {
-        return carriageID + "\n" + velocity+"\n"+currSegment.getID();
-    }
-
     public void update(JSONObject cMsg) {
         System.out.println("updated with this message: "+cMsg);
     }

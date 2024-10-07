@@ -1,7 +1,5 @@
 package CCP;
-
 import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 
 class Controller {
     enum CCPState {
@@ -16,13 +14,11 @@ class Controller {
         Error
     }
     private static Carriage br17;
-    private static MCP mcp;
-    private static BR17 br17Con;
+    private static ConHandler connectionHandler;
     private static CCPState currentState = CCPState.Initialize;
 
     public static void main(String[] args) {
-        br17Con = new BR17();
-        mcp = new MCP();
+        connectionHandler = new ConHandler();
         br17 = new Carriage();
         for (;;) {
             processControl();
@@ -34,8 +30,8 @@ class Controller {
             case Initialize:
                 System.out.println("INIT");
 
-                mcp.sendInit();
-                br17Con.sendInit();
+                connectionHandler.mcp.sendInit();
+                connectionHandler.br17Con.sendInit();
 
                 currentState = CCPState.AwaitingACKs;
                 break;
@@ -43,10 +39,10 @@ class Controller {
                 System.out.println("AwaitingACKs");
                 long currA = System.currentTimeMillis();
 
-                if (!mcp.getStatus() && mcp.gotAck()) {
-                    mcp.startListening();
+                if (!connectionHandler.mcp.getStatus() && connectionHandler.mcp.gotAck()) {
+                    connectionHandler.mcp.startListening();
                 }
-                if (!br17Con.getStatus() && br17Con.gotAck()) {
+                if (!connectionHandler.br17Con.getStatus() && connectionHandler.br17Con.gotAck()) {
                     br17Con.startListening();
                 }
 
@@ -59,7 +55,7 @@ class Controller {
                     br17Con.sendInit();
                 }
                 break;
-            case Listening://Possibly chnage the way it checks times
+            case Listening:
                 System.out.println("Listening");
                 long currL = System.currentTimeMillis();
                 mcp.recievePacket();
@@ -71,10 +67,10 @@ class Controller {
                 } else if (!br17Con.getMessages().isEmpty()) {
                     br17Con.considerMsgRecent();
                     currentState = CCPState.BRMsgReceived;
-                } else if((currL - br17Con.getlastMsgTime() > 2500)) {
-                    br17Con.sendPacket("Get_BR_Status");//TODO change string
+                } else if((currL - br17Con.getlastMsgTime() > 2000)) {
+                    br17Con.sendPacket("");
                     currentState = CCPState.SentStateREQ;
-                }else if ((currL - mcp.getlastMsgTime() > 2000)) { //Lost Connection
+                }else if ((currL - mcp.getlastMsgTime() > 2000)) {
                     mcp.setStatus(false);
                     currentState = CCPState.Error;
                 }
@@ -109,7 +105,7 @@ class Controller {
                 break;
             case SendInstruction:
                 System.out.println("SendInstruction");
-                br17Con.sendPacket(processCmd(mcp.viewConsidered()));
+                br17Con.sendPacket((String)mcp.viewConsidered().get("action"));
                 currentState = CCPState.Listening;
                 break;
             case SentStateREQ:
@@ -127,7 +123,7 @@ class Controller {
                 break;
             case SendData:
                 System.out.println("SendData");
-                mcp.sendPacket(br17.getCarriageData()); //TODO
+                mcp.sendPacket(br17.getState());
                 currentState = CCPState.Listening;
                 break;
             case Error:
@@ -146,14 +142,11 @@ class Controller {
         }
     }
 
-    private static boolean isStatusReq(JSONObject viewMSGRecent) {
-        //TODO check if it was a status request
-        return true;
-    }
-
-    private static String processCmd(JSONObject msgRecent) {
-        //TODO process the command
-        return "Processed Command";
+    private static boolean isStatusReq(JSONObject msg) {
+        if(msg.get("message").equals("STATRQ")) {
+            return true;
+        }
+        return false;
     }
 
     public static boolean isValid(JSONObject cmd, int type) {
