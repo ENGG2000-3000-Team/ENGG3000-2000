@@ -1,5 +1,7 @@
 package CCP;
 
+import org.json.simple.JSONObject;
+
 public class Carriage {
     private int carriageID;
     private int velocity;
@@ -17,7 +19,7 @@ public class Carriage {
         return carriageID + "\n" + velocity+"\n"+currSegment.getID();
     }
 
-    public void update(String cMsg) {
+    public void update(JSONObject cMsg) {
         System.out.println("updated with this message: "+cMsg);
     }
 

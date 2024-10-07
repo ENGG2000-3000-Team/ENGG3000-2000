@@ -1,4 +1,8 @@
 package CCP;
+
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+
 class Controller {
     enum CCPState {
         Initialize,
@@ -79,7 +83,7 @@ class Controller {
             case MCPCmdReceived: //Either gives carriage new instruction or asks status update
                 System.out.println("MCPCmdReceived");
                 if (isValid(mcp.viewConsidered(),1)) {
-                    if (isStatusReq(mcp.viewConsidered(), 1)) {
+                    if (isStatusReq(mcp.viewConsidered())) {
                         currentState = CCPState.SendData;
                     } else {
                         currentState = CCPState.SendInstruction;
@@ -142,18 +146,20 @@ class Controller {
         }
     }
 
-    private static boolean isStatusReq(String viewMSGRecent, int type) {
+    private static boolean isStatusReq(JSONObject viewMSGRecent) {
         //TODO check if it was a status request
         return true;
     }
 
-    private static String processCmd(String msgRecent) {
+    private static String processCmd(JSONObject msgRecent) {
         //TODO process the command
         return "Processed Command";
     }
 
-    public static boolean isValid(String cmd, int type) {
-        //TODO Check msg validity
+    public static boolean isValid(JSONObject cmd, int type) {
+        if(cmd == null) {
+            return false;
+        }
         return true;
     }
 }

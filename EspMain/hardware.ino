@@ -21,11 +21,11 @@ const int ledBluePin2 = 2;
 // WiFi credentials
 const char* ssid = "ENGG2K3K";
 IPAddress staticIP(10,20,30,117);
-IPAddress gateway(10,20,30,1);   // Replace this with your gateway IP Addess
+IPAddress gateway(10,20,30,1);
 IPAddress subnet(255, 255, 255, 0);
 WiFiUDP udp;
 char packetBuffer[255];
-unsigned int localPort = 9999;
+unsigned int localPort = 9999; //Todo change needed
 
 // Motor control variables
 int motorSpeed = 0;
@@ -34,9 +34,7 @@ int motorSpeed = 0;
 int ledRed = 0;
 int ledGreen = 0;
 int ledBlue = 0;
-//https://randomnerdtutorials.com/esp32-useful-wi-fi-functions-arduino/
-//https://www.baeldung.com/udp-in-java
-//https://www.aranacorp.com/en/communication-between-two-esp32s-via-udp/
+
 //Carriage State
 String carriageState = "In Transit";
 
@@ -63,8 +61,6 @@ void setup() {
 }
 
 void loop() {
-  // Here you would receive and parse JSON data via TCP/UDP from the CCP
-  // For demonstration, we'll use hardcoded states
   netCode();
 
   // Read the IR sensor value

@@ -21,7 +21,7 @@ public class MCP extends Connection{
         timeSent = System.currentTimeMillis();
         msgAttempts++;
 
-        byte[] buffer = "Hello CCP17 Exists".getBytes();
+        byte[] buffer = "Hello CCP17 Exists".getBytes(); //Change for JSON msg
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length,address, 0000);
         try {
             socket.send(packet);
@@ -31,7 +31,7 @@ public class MCP extends Connection{
     }
 
     public void sendPacket(String msg) {
-        byte[] buffer = msg.getBytes();
+        byte[] buffer = msg.getBytes(); //Change for JSON msg
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, 0000);
         try {
             socket.send(packet);
