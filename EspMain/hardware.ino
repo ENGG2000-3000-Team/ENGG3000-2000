@@ -1,7 +1,9 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
-#include "ArdunioJson.h"
 #include <NewPing.h>
+#include <ArduinoJson.h>
+#include <iostream>
+using namespace std;
 
 // Define motor pins
 const int motorPin1 = 18; // Motor control pin 1
@@ -28,7 +30,6 @@ IPAddress subnet(255, 255, 255, 0);
 WiFiUDP udp;
 char packetBuffer[1000];
 unsigned int localPort = 9999; //Todo change needed
-StaticJsonBuffer<255> JSONBuffer;
 
 // Motor control variables
 int motorSpeed = 0;
@@ -47,7 +48,7 @@ unsigned long targetDistance;
 NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
 
 //Carriage State
-String carriageState = "In Transit";
+string carriageState = "In Transit";
 
 void setup() {
   // Set motor pins as output
@@ -72,7 +73,7 @@ void setup() {
 }
 
 void loop() {
-  netCode();
+  netCodeRNA();
   ultrasonicDetect();
   // Read the IR sensor value
   //int irSensorValue = digitalRead(irSensorPin);
@@ -122,19 +123,21 @@ void netCodeRNA() {
       packetBuffer[len - 1] = 0;
     }
     Serial.printf("UDP packet contents: %s\n", packetBuffer);
-    JsonObject& parsed = JSONBuffer.parseObject(packetBuffer);
-    if(!parsed.success()) {
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, packetBuffer);
+    if (error) {
       Serial.println("Parsing failed");
       return;
     }
 
-    JsonObject& encoder = JSONBuffer.createObject();
+    JsonDocument doc1;
+    JsonObject encoder = doc1.add<JsonObject>();
     encoder["client_type"] = "BR";
     encoder["client_id"] = "BR17";
     encoder["sequence_number"] = random(1000, 30000);
 
     //if Packet is status request send back status else if exec cmd save new status
-    const String msgType = parsed["message"];
+    const String msgType = doc["message"];
     if (msgType[0] == 'S') {
       udp.beginPacket(gateway, 3017);
       encoder["message"] = "STAT";
@@ -143,7 +146,8 @@ void netCodeRNA() {
       udp.write(encoder);
       udp.endPacket();
     } else if (msgType[0] == 'E') {
-      strcpy(carriageState, parsed["cmd"]);
+      string temp(doc["cmd"]); 
+      carriageState = temp;
       udp.beginPacket(gateway, 3017);
       encoder["message"] = "AKEX";
       udp.write(encoder);
@@ -153,16 +157,17 @@ void netCodeRNA() {
 }
 
 void netCodeUpdate() {
-    JsonObject& encoder = JSONBuffer.createObject();
-    encoder["client_type"] = "BR";
-    encoder["client_id"] = "BR17";
-    encoder["sequence_number"] = random(1000, 30000);
-    encoder["message"] = "STAT";
-    encoder["state"] = carriageState;
+  JsonDocument doc;
+  JsonObject encoder = doc.add<JsonObject>();
+  encoder["client_type"] = "BR";
+  encoder["client_id"] = "BR17";
+  encoder["sequence_number"] = random(1000, 30000);
+  encoder["message"] = "STAT";
+  encoder["state"] = carriageState;
 
-    udp.beginPacket(gateway, 3017);
-    udp.print(encoder);
-    udp.endPacket();
+  udp.beginPacket(gateway, 3017);
+  udp.print(encoder);
+  udp.endPacket();
 }
 
 // Connect to WiFi
