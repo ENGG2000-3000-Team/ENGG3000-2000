@@ -8,7 +8,7 @@ import org.json.simple.JSONObject;
 
 public class MCP extends Connection{
     protected InetAddress address;
-    protected byte IPAddress[] = {10,20,30,1};
+    protected byte IPAddress[] = {10,20,30,(byte)177};
     MCP() {
         super("MCP", false);
 
@@ -32,7 +32,7 @@ public class MCP extends Connection{
         msgJ.put("sequence_number", generateRandom());
 
         byte[] buffer = msgJ.toJSONString().getBytes();
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, 3017);
+        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, 2000);
         try {
             socket.send(packet);
         }catch(Exception e) {
@@ -55,7 +55,7 @@ public class MCP extends Connection{
         }
 
         byte[] buffer = msgJ.toJSONString().getBytes();
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, 3017);
+        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, 2000);
         try {
             socket.send(packet);
         }catch(Exception e) {

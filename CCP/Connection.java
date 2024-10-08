@@ -1,5 +1,6 @@
 package CCP;
-import java.util.ArrayList;
+import java.util.Vector;
+
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
@@ -9,7 +10,7 @@ public abstract class Connection {
 
     //Message Handeling
     protected JSONParser parser;
-    protected ArrayList<JSONObject> messages;
+    protected Vector<JSONObject> messages;
     protected JSONObject consideringMsg;
 
     protected long lastMsgTime;
@@ -20,7 +21,7 @@ public abstract class Connection {
         name = n;
         status = s;
         msgAttempts = 0;
-        messages = new ArrayList<JSONObject>();
+        messages = new Vector<JSONObject>();
         consideringMsg = null;
     }
 
@@ -71,7 +72,7 @@ public abstract class Connection {
         status  = b;
     }
 
-    public ArrayList<JSONObject> getMessages() {
+    public Vector<JSONObject> getMessages() {
         return messages;
     }
 
@@ -80,9 +81,10 @@ public abstract class Connection {
     }
 
     protected boolean gotAckIN() {
-        for(JSONObject o: messages) {
-            if(o.get("message").equals("ACKIN")) {
-                messages.remove(o);
+        for(int i=0; i<messages.size(); i++) {
+            System.out.println(messages.get(i));
+            if(messages.get(i).get("message").equals("AKIN")) {
+                messages.remove(i);
                 return true;
             }
         }

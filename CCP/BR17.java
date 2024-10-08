@@ -32,7 +32,7 @@ public class BR17 extends Connection{
 
         byte[] buffer = msgJ.toJSONString().getBytes();
 
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, 3017);
+        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, 1234);
         try {
             socket.send(packet);
         }catch(Exception e) {
@@ -55,7 +55,7 @@ public class BR17 extends Connection{
         }
 
         byte[] buffer = msgJ.toJSONString().getBytes();
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, 3017);
+        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, 1234);
         try {
             socket.send(packet);
         }catch(Exception e) {

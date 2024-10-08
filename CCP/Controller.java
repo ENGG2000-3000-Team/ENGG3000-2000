@@ -1,4 +1,5 @@
 package CCP;
+
 import org.json.simple.JSONObject;
 
 class Controller {
@@ -21,6 +22,7 @@ class Controller {
     public static void main(String[] args) {
         cHandler = new ConHandler();
         br17 = new Carriage();
+        // DatagramPacket packet = new DatagramPacket("hi", 2, (IPadd), 2000);
         for (;;) {
             processControl();
         }
@@ -35,9 +37,9 @@ class Controller {
 
                 currentState = CCPState.AwaitingACKs;
                 break;
-            case AwaitingACKs:
-                System.out.println("AwaitingACKs");
+            case AwaitingACKs: //TODO Change hella
                 cHandler.recievePacket();
+                long currA = System.currentTimeMillis();
 
                 if (cHandler.gotMCPAckIN()) {
                     cHandler.getMCP().startListening();
@@ -49,7 +51,7 @@ class Controller {
                     currentState = CCPState.Listening;
                 } else if (cHandler.getMCP().getAttempts() >= 10 || cHandler.getBR().getAttempts() >= 10) {
                     currentState = CCPState.Error; //Could not initalize with MCP and/or carriage
-                } else {
+                } else if ((currA - cHandler.getMCP().getTimeSent() > 1000) && (currA - cHandler.getBR().getTimeSent() > 1000)){
                     cHandler.sendInits();
                 }
                 break;
@@ -113,7 +115,7 @@ class Controller {
                 }else if(cHandler.getBR().getAttempts() >= 3) {
                     cHandler.getBR().setStatus(false);
                     currentState = CCPState.Error;
-                }else {
+                }else if (System.currentTimeMillis() - cHandler.getBR().getlastMsgTime() > 1000){
                     System.out.println(cHandler.getBR().getAttempts());
                     cHandler.sendSTATRQ();
                 }
@@ -127,7 +129,7 @@ class Controller {
                 }else if(cHandler.getBR().getAttempts() >= 3) {
                     cHandler.getBR().setStatus(false);
                     currentState = CCPState.Error;
-                }else {
+                }else if(System.currentTimeMillis() - cHandler.getBR().getlastMsgTime() > 1000){
                     System.out.println(cHandler.getBR().getAttempts());
                     cHandler.sendSTATRQ();
                 }
@@ -142,7 +144,7 @@ class Controller {
                 }else if(cHandler.getMCP().getAttempts() >= 3) {
                     cHandler.getMCP().setStatus(false);
                     currentState = CCPState.Error;
-                }else {
+                }else if(System.currentTimeMillis() - cHandler.getMCP().getlastMsgTime() > 1000){
                     System.out.println(cHandler.getMCP().getAttempts());
                     cHandler.sendSTATRQ();
                 }
@@ -165,6 +167,7 @@ class Controller {
                 System.out.println("- Program Died -");
                 System.out.println("MCP: "+cHandler.getMCP().getStatus());
                 System.out.println("BR17: "+cHandler.getBR().getStatus());
+                System.exit(0);
         }
     }
 

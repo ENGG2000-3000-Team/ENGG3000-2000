@@ -35,7 +35,7 @@ public class ConHandler {
         threadPool.submit(new RecieverThread(this));
     }
 
-     public void recievePacketAsync() {
+    public void recievePacketAsync() {
         DatagramPacket packet = new DatagramPacket(buf, buf.length);
 
         try {
@@ -52,7 +52,7 @@ public class ConHandler {
             return;
         }
 
-        if(msg.get("client_type").equals("mcp")) {
+        if(msg.get("client_type").equals("ccp")) {
             mcp.addMessage(msg);
         }else {
             br17Con.addMessage(msg);
