@@ -3,15 +3,9 @@ package CCP;
 import org.json.simple.JSONObject;
 
 public class Carriage {
-    private int carriageID;
-    private int velocity;
-    private Segment currSegment;
     private String carriageState;
 
     Carriage() {
-        carriageID = 17;
-        velocity = 0;//forawrd is + backward is -
-        currSegment = new Segment(0,0);
         carriageState = "state";
     }
 

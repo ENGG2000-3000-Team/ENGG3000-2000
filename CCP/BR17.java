@@ -62,4 +62,18 @@ public class BR17 extends Connection{
             System.out.println(""+e);
         }
     }
+
+    public boolean gotAckEx() {
+        for(JSONObject o: messages) {
+            if(o.get("message").equals("ACKEX")) {
+                messages.remove(o);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean gotStateUpdate() {
+        return messages.get(0).get("message").equals("STAT");
+    }
 }

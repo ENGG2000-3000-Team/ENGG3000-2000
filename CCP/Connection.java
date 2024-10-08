@@ -1,11 +1,7 @@
 package CCP;
-import java.util.Queue;
-import java.net.DatagramSocket;
-import java.net.DatagramPacket;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 
 public abstract class Connection {
     protected String name;
@@ -13,7 +9,7 @@ public abstract class Connection {
 
     //Message Handeling
     protected JSONParser parser;
-    protected Queue<JSONObject> messages;
+    protected ArrayList<JSONObject> messages;
     protected JSONObject consideringMsg;
 
     protected long lastMsgTime;
@@ -24,7 +20,7 @@ public abstract class Connection {
         name = n;
         status = s;
         msgAttempts = 0;
-        messages = new LinkedList<JSONObject>();
+        messages = new ArrayList<JSONObject>();
         consideringMsg = null;
     }
 
@@ -35,7 +31,7 @@ public abstract class Connection {
     }
 
     public void addMessage(JSONObject s) {
-        messages.add(s);
+        messages.add(0,s);
         lastMsgTime = System.currentTimeMillis();
     }
 
@@ -43,20 +39,12 @@ public abstract class Connection {
         if(messages.isEmpty()) {
             return null;
         }
-        consideringMsg = messages.poll();
+        consideringMsg = messages.remove(0);
         return consideringMsg;
     }
 
     public JSONObject viewConsidered() {
         return consideringMsg;
-    }
-
-    public boolean gotAck() {
-        if(isAck(messages.peek())) {
-            messages.poll();
-            return true;
-        }
-        return false;
     }
 
     public int getAttempts() {
@@ -65,13 +53,6 @@ public abstract class Connection {
 
     public void resetMsgAttempts() {
         msgAttempts = 0;
-    }
-
-    private boolean isAck(JSONObject object) {
-        if(object == null || !object.get("message").equals("AKIN")){
-            return false;
-        }
-        return true;
     }
 
     public boolean getStatus() {
@@ -90,11 +71,21 @@ public abstract class Connection {
         status  = b;
     }
 
-    public Queue<JSONObject> getMessages() {
+    public ArrayList<JSONObject> getMessages() {
         return messages;
     }
 
     protected Integer generateRandom() {
         return (int) (Math.random() * (30000 - 1000 + 1) + 1000);
+    }
+
+    protected boolean gotAckIN() {
+        for(JSONObject o: messages) {
+            if(o.get("message").equals("ACKIN")) {
+                messages.remove(o);
+                return true;
+            }
+        }
+        return false;
     }
 }

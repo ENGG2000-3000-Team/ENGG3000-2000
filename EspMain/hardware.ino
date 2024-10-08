@@ -1,5 +1,6 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
+#include "ArdunioJson.h"
 
 // Define motor pins
 const int motorPin1 = 18; // Motor control pin 1
@@ -24,8 +25,9 @@ IPAddress staticIP(10,20,30,117);
 IPAddress gateway(10,20,30,1);
 IPAddress subnet(255, 255, 255, 0);
 WiFiUDP udp;
-char packetBuffer[255];
+char packetBuffer[1000];
 unsigned int localPort = 9999; //Todo change needed
+StaticJsonBuffer<255> JSONBuffer;
 
 // Motor control variables
 int motorSpeed = 0;
@@ -101,30 +103,57 @@ void loop() {
   delay(500);
 }
 
-void netCode() {
+void netCodeRNA() {
   int packetSize = udp.parsePacket();
   if (packetSize) {
     // receive incoming UDP packets
     Serial.printf("Received %d bytes from %s, port %d\n", packetSize, udp.remoteIP().toString().c_str(), udp.remotePort());
-    int len = udp.read(packetBuffer, 255);
+    int len = udp.read(packetBuffer, 1000);
     if (len > 0) {
       packetBuffer[len - 1] = 0;
     }
     Serial.printf("UDP packet contents: %s\n", packetBuffer);
+    JsonObject& parsed = JSONBuffer.parseObject(packetBuffer);
+    if(!parsed.success()) {
+      Serial.println("Parsing failed");
+      return;
+    }
+
+    JsonObject& encoder = JSONBuffer.createObject();
+    encoder["client_type"] = "BR";
+    encoder["client_id"] = "BR17";
+    encoder["sequence_number"] = random(1000, 30000);
 
     //if Packet is status request send back status else if exec cmd save new status
-    if (packetBuffer[0] == 'S') {  //Arbitrary Val checks for stat request
+    const String msgType = parsed["message"];
+    if (msgType[0] == 'S') {
       udp.beginPacket(gateway, 3017);
-      udp.print(carriageState);
+      encoder["message"] = "STAT";
+      encoder["state"] = carriageState;
+
+      udp.write(encoder);
       udp.endPacket();
-    } else if (packetBuffer[0] == 'E') {  //TODO Saves new status if execute cmd
-      //TODO Message Handeling needs to be done here, with speed etc
-      carriageState = "";
-      for (int i = 1; i < 21; i++) {
-        carriageState = carriageState + packetBuffer[i];
-      }
+    } else if (msgType[0] == 'E') {
+      strcpy(carriageState, parsed["cmd"]);
+      udp.beginPacket(gateway, 3017);
+      encoder["message"] = "AKEX";
+      udp.write(encoder);
+      udp.endPacket();
     }
   }
+}
+
+void netCodeUpdate() {
+    JsonObject& encoder = JSONBuffer.createObject();
+    encoder["client_type"] = "BR";
+    encoder["client_id"] = "BR17";
+    encoder["sequence_number"] = random(1000, 30000);
+    encoder["message"] = "STAT";
+    encoder["state"] = carriageState;
+
+    udp.beginPacket(gateway, 3017);
+    udp.print(encoder);
+    udp.endPacket();
 }
 
 // Connect to WiFi

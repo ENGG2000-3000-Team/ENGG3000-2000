@@ -62,4 +62,14 @@ public class MCP extends Connection{
             System.out.println(""+e);
         }
     }
+
+    public boolean gotAckSt() {
+        for(JSONObject o: messages) {
+            if(o.get("message").equals("ACKST")) {
+                messages.remove(o);
+                return true;
+            }
+        }
+        return false;
+    }
 }

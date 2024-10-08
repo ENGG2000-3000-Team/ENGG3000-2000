@@ -2,7 +2,8 @@ package CCP;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -12,8 +13,9 @@ public class ConHandler {
     private DatagramSocket socket;
     private byte[] buf;
     private JSONParser parser;
-    private MCP mcP;
+    private MCP mcp;
     private BR17 br17Con;
+    private ExecutorService threadPool;
 
     ConHandler() {
         try {
@@ -21,14 +23,21 @@ public class ConHandler {
         }catch(Exception e) {
             System.out.println(e);
         }
+        buf = new byte[1000];
 
         parser = new JSONParser();
         br17Con = new BR17();
-        mcP = new MCP();
+        mcp = new MCP();
+        threadPool = Executors.newFixedThreadPool(1);
     }
 
     public void recievePacket() {
+        threadPool.submit(new RecieverThread(this));
+    }
+
+     public void recievePacketAsync() {
         DatagramPacket packet = new DatagramPacket(buf, buf.length);
+
         try {
             socket.receive(packet);
         }catch(Exception e) {
@@ -40,17 +49,18 @@ public class ConHandler {
             msg = (JSONObject) parser.parse(received);
         } catch (ParseException e) {
             System.out.println(e);
+            return;
         }
 
         if(msg.get("client_type").equals("mcp")) {
-            mcP.addMessage(msg);
+            mcp.addMessage(msg);
         }else {
             br17Con.addMessage(msg);
         }
     }
 
     public void sendInits() {
-        mcP.sendInit(socket);
+        mcp.sendInit(socket);
         br17Con.sendInit(socket);
     }
 
@@ -63,23 +73,15 @@ public class ConHandler {
     }
 
     public void sendSTAT(String state) {
-        mcP.sendPacket(state,socket);
+        mcp.sendPacket(state,socket);
     }
 
     public void sendAKEXC() {
-        mcP.sendPacket("",socket);
-    }
-
-    public boolean gotMCPAck() {
-        return !mcP.getStatus() && mcP.gotAck();
-    }
-
-    public boolean gotBRAck() {
-        return !br17Con.getStatus() && br17Con.gotAck();
+        mcp.sendPacket("",socket);
     }
 
     public MCP getMCP() {
-        return mcP;
+        return mcp;
     }
 
     public BR17 getBR() {
@@ -88,5 +90,13 @@ public class ConHandler {
 
     public void close() {
         socket.close();
+    }
+
+    public boolean gotMCPAckIN() {
+        return mcp.gotAckIN();
+    }
+
+    public boolean gotBRAckIN() {
+        return br17Con.gotAckIN();
     }
 }
