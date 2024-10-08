@@ -1,6 +1,7 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
 #include "ArdunioJson.h"
+#include <NewPing.h>
 
 // Define motor pins
 const int motorPin1 = 18; // Motor control pin 1
@@ -37,6 +38,14 @@ int ledRed = 0;
 int ledGreen = 0;
 int ledBlue = 0;
 
+// Ultrasonic variables
+#define TRIGGER_PIN  13  // ESP32 pin tied to trigger pin on the ultrasonic sensor.
+#define ECHO_PIN     12  // ESP32 pin tied to echo pin on the ultrasonic sensor.
+#define MAX_DISTANCE 200 // Maximum distance we want to ping for (in centimeters).
+unsigned long currDistance;
+unsigned long targetDistance;
+NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
+
 //Carriage State
 String carriageState = "In Transit";
 
@@ -64,7 +73,7 @@ void setup() {
 
 void loop() {
   netCode();
-
+  ultrasonicDetect();
   // Read the IR sensor value
   //int irSensorValue = digitalRead(irSensorPin);
     
@@ -217,3 +226,13 @@ void setLEDColor(int red, int green, int blue) {
   analogWrite(ledGreenPin, green);
   analogWrite(ledBluePin, blue);
 }
+
+// Notifies the ESP32 if an object as gotten too close to the carriage
+void ultrasonicDetect() {
+  currDistance = sonar.ping_cm();
+  Serial.print("Ultrasonic Ping: ");
+  Serial.print(currDistance);
+  Serial.println("cm");
+  if (currDistance < targetDistance) {
+    carriageState == "Collision Avoidance";
+  }
