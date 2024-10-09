@@ -9,7 +9,7 @@ class Controller {
         MCPCmdReceived,
         SentInstruction,
         SentStateREQ,
-        AwaitingACKs,
+        MCPConnected,
         SentData,
         BRMsgReceived,
         Error,
@@ -32,27 +32,28 @@ class Controller {
         switch (currentState) {
             case Initialize:
                 System.out.println("INIT");
-
-                cHandler.sendInits();
-
-                currentState = CCPState.AwaitingACKs;
-                break;
-            case AwaitingACKs: //TODO Change hella
                 cHandler.recievePacket();
                 long currA = System.currentTimeMillis();
 
                 if (cHandler.gotMCPAckIN()) {
                     cHandler.getMCP().startListening();
                 }
-                if (cHandler.gotBRAckIN()) {
-                    cHandler.getBR().startListening();
-                }
-                if (cHandler.getMCP().getStatus() && cHandler.getBR().getStatus()) {
-                    currentState = CCPState.Listening;
-                } else if (cHandler.getMCP().getAttempts() >= 10 || cHandler.getBR().getAttempts() >= 10) {
+                if (cHandler.getMCP().getStatus()) {
+                    currentState = CCPState.MCPConnected;
+                } else if (cHandler.getMCP().getAttempts() >= 10) {
                     currentState = CCPState.Error; //Could not initalize with MCP and/or carriage
-                } else if ((currA - cHandler.getMCP().getTimeSent() > 1000) && (currA - cHandler.getBR().getTimeSent() > 1000)){
-                    cHandler.sendInits();
+                } else if (currA - cHandler.getMCP().getTimeSent() > 1000){
+                    cHandler.sendInit();
+                }
+                break;
+            case MCPConnected:
+            System.out.println("MCPConnected");
+                cHandler.recievePacket();
+
+                if (cHandler.getBR().gotINIT()) {
+                    cHandler.sendAKINIT();
+                    cHandler.getBR().startListening();
+                    currentState = CCPState.Listening;
                 }
                 break;
             case Listening:

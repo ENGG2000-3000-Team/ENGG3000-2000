@@ -59,9 +59,8 @@ public class ConHandler {
         }
     }
 
-    public void sendInits() {
+    public void sendInit() {
         mcp.sendInit(socket);
-        br17Con.sendInit(socket);
     }
 
     public void sendEXEC(String cmd) {
@@ -70,6 +69,10 @@ public class ConHandler {
 
     public void sendSTATRQ() {
         br17Con.sendPacket("",socket);
+    }
+
+    public void sendAKINIT() {
+        mcp.sendPacket("",socket);
     }
 
     public void sendSTAT(String state) {

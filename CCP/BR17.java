@@ -19,35 +19,15 @@ public class BR17 extends Connection{
     }
 
     @SuppressWarnings("unchecked")
-    public void sendInit(DatagramSocket socket) {
-        if(status) return;
-        timeSent = System.currentTimeMillis();
-        msgAttempts++;
-
-        JSONObject msgJ = new JSONObject();
-        msgJ.put("client_type", "CCP");
-        msgJ.put("message", "CCIN");
-        msgJ.put("client_id", "BR17");
-        msgJ.put("sequence_number", generateRandom());
-
-        byte[] buffer = msgJ.toJSONString().getBytes();
-
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, 1234);
-        try {
-            socket.send(packet);
-        }catch(Exception e) {
-            System.out.println("Sending Error"+e);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
     public void sendPacket(String msg, DatagramSocket socket) {
         JSONObject msgJ = new JSONObject();
-        msgJ.put("client_type", "CCP");
+        msgJ.put("client_type", "FCCP");
         msgJ.put("client_id", "BR17");
         msgJ.put("sequence_number", generateRandom());
 
-        if(!msg.isEmpty()) {
+        if(msg.equals("AKIN")) {
+            msgJ.put("message", "AKIN");
+        }else if(!msg.isEmpty()) {
             msgJ.put("message", "EXEC");
             msgJ.put("cmd", msg);
         }else {
@@ -64,9 +44,19 @@ public class BR17 extends Connection{
     }
 
     public boolean gotAckEx() {
-        for(JSONObject o: messages) {
-            if(o.get("message").equals("ACKEX")) {
-                messages.remove(o);
+        for(int i=0; i<messages.size(); i++) {
+            if(messages.get(i).get("message").equals("ACKEX")) {
+                messages.remove(i);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean gotINIT() {
+        for(int i=0; i<messages.size(); i++) {
+            if(messages.get(i).get("message").equals("BRIN")) {
+                messages.remove(i);
                 return true;
             }
         }

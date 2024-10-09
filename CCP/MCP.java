@@ -64,9 +64,9 @@ public class MCP extends Connection{
     }
 
     public boolean gotAckSt() {
-        for(JSONObject o: messages) {
-            if(o.get("message").equals("ACKST")) {
-                messages.remove(o);
+        for(int i=0; i<messages.size(); i++) {
+            if(messages.get(i).get("message").equals("AKST")) {
+                messages.remove(i);
                 return true;
             }
         }
