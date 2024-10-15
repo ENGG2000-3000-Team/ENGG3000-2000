@@ -8,7 +8,7 @@ import org.json.simple.JSONObject;
 
 public class MCP extends Connection{
     protected InetAddress address;
-    protected byte IPAddress[] = {10,20,30,(byte)177};
+    protected byte IPAddress[] = {(byte)127,0,0,1};
     MCP() {
         super("MCP", false);
 
@@ -29,7 +29,7 @@ public class MCP extends Connection{
         msgJ.put("client_type", "CCP");
         msgJ.put("message", "CCIN");
         msgJ.put("client_id", "BR17");
-        msgJ.put("sequence_number", generateRandom());
+        msgJ.put("sequence_number", internalSeq);
 
         byte[] buffer = msgJ.toJSONString().getBytes();
         DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, 2000);
@@ -45,7 +45,7 @@ public class MCP extends Connection{
         JSONObject msgJ = new JSONObject();
         msgJ.put("client_type", "CCP");
         msgJ.put("client_id", "BR17");
-        msgJ.put("sequence_number", generateRandom());
+        msgJ.put("sequence_number", internalSeq);
 
         if(!msg.isEmpty()) {
             msgJ.put("message", "STAT");
@@ -67,6 +67,7 @@ public class MCP extends Connection{
         for(int i=0; i<messages.size(); i++) {
             if(messages.get(i).get("message").equals("AKST")) {
                 messages.remove(i);
+                internalSeq++;
                 return true;
             }
         }

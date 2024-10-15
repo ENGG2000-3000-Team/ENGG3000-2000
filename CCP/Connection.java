@@ -16,6 +16,8 @@ public abstract class Connection {
     protected long lastMsgTime;
     protected long timeSent;
     protected int msgAttempts;
+    protected int internalSeq = 1001;
+    protected int expectedSeq;
 
     Connection(String n, boolean s) {
         name = n;
@@ -32,7 +34,23 @@ public abstract class Connection {
     }
 
     public void addMessage(JSONObject s) {
-        messages.add(0,s);
+        if(expectedSeq < Integer.valueOf(s.get("sequence_number").toString())) {
+            expectedSeq = Integer.valueOf(s.get("sequence_number").toString());
+        }else if(expectedSeq > Integer.valueOf(s.get("sequence_number").toString())) {
+            return;
+        }
+
+        if(messages.isEmpty()) {
+            messages.add(s);
+            System.out.println(messages);
+            return;
+        }
+        for(int i=0; i<messages.size(); i++) {
+            if(Integer.valueOf(messages.get(i).get("sequence_number").toString())>Integer.valueOf(s.get("sequence_number").toString())) {
+                messages.add(i,s);
+                break;
+            }
+        }
         lastMsgTime = System.currentTimeMillis();
     }
 
@@ -76,18 +94,19 @@ public abstract class Connection {
         return messages;
     }
 
-    protected Integer generateRandom() {
-        return (int) (Math.random() * (30000 - 1000 + 1) + 1000);
-    }
-
     protected boolean gotAckIN() {
         for(int i=0; i<messages.size(); i++) {
             System.out.println(messages.get(i));
             if(messages.get(i).get("message").equals("AKIN")) {
+                expectedSeq = Integer.valueOf(messages.get(i).get("sequence_number").toString());
                 messages.remove(i);
                 return true;
             }
         }
         return false;
+    }
+
+    public int getExpectedSeq() {
+        return expectedSeq;
     }
 }

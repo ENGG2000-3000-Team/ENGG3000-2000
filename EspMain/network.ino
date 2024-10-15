@@ -18,6 +18,7 @@ string carriageState;
 char netState = 'i';
 unsigned long timeSent;
 unsigned long seqNum = random(1000, 30000);
+int expectedSeq;
 
 void setup() {
   // Initialize serial communication
@@ -64,6 +65,13 @@ void netCodeRNA() {
     Serial.printf("UDP packet contents: %s\n", packetBuffer);
     JsonDocument doc;
     DeserializationError error = deserializeJson(doc, packetBuffer);
+    const String msgType = doc["message"];
+
+    if(expectedSeq < (int)doc["sequence_number"]) {
+      expectedSeq = (int)doc["sequence_number"];
+    }else if(expectedSeq > (int)doc["sequence_number"]) {
+      return;
+    }
 
     JsonDocument doc1;
     JsonObject encoder = doc1.add<JsonObject>();
@@ -73,7 +81,6 @@ void netCodeRNA() {
     seqNum++;
 
     //if Packet is status request send back status else if exec cmd save new status
-    const String msgType = doc["message"];
     std::string packet = "";
 
     Serial.println(msgType);
@@ -101,6 +108,7 @@ void netCodeRNA() {
     } else if (msgType[0] == 'A') {
       carriageState = "Idle";
       netState = 'r';
+      expectedSeq = (int)doc["sequence_number"];
     } 
   }
 }

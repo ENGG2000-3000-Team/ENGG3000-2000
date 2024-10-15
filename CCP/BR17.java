@@ -22,7 +22,7 @@ public class BR17 extends Connection{
         JSONObject msgJ = new JSONObject();
         msgJ.put("client_type", "FCCP");
         msgJ.put("client_id", "BR17");
-        msgJ.put("sequence_number", generateRandom());
+        msgJ.put("sequence_number", internalSeq);
 
         if(msg.equals("AKIN")) {
             msgJ.put("message", msg);
@@ -46,6 +46,7 @@ public class BR17 extends Connection{
         for(int i=0; i<messages.size(); i++) {
             if(messages.get(i).get("message").equals("ACKEX")) {
                 messages.remove(i);
+                internalSeq++;
                 return true;
             }
         }
@@ -55,6 +56,7 @@ public class BR17 extends Connection{
     public boolean gotINIT() {
         for(int i=0; i<messages.size(); i++) {
             if(messages.get(i).get("message").equals("BRIN")) {
+                expectedSeq = Integer.valueOf(messages.get(i).get("sequence_number").toString());
                 messages.remove(i);
                 return true;
             }
@@ -66,6 +68,7 @@ public class BR17 extends Connection{
         for(int i=0; i<messages.size(); i++) {
             if(messages.get(i).get("message").equals("STAT")) {
                 consideringMsg = messages.get(i);
+                internalSeq++;
                 return true;
             }
         }

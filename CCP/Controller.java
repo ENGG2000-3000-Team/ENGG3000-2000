@@ -30,7 +30,6 @@ class Controller {
     public static void processControl() {
         switch (currentState) {
             case Initialize:
-                System.out.println("INIT");
                 cHandler.recievePacket();
                 long currA = System.currentTimeMillis();
 
@@ -40,9 +39,11 @@ class Controller {
                 if (cHandler.getMCP().getStatus()) {
                     currentState = CCPState.MCPConnected;
                 } else if (cHandler.getMCP().getAttempts() >= 10) {
+                    System.out.println("Couldn't Init");
                     currentState = CCPState.Error; //Could not initalize with MCP and/or carriage
                 } else if (currA - cHandler.getMCP().getTimeSent() > 1000){
                     cHandler.sendInit();
+                    System.out.println("SentInit");
                 }
                 break;
             case MCPConnected:
@@ -65,7 +66,7 @@ class Controller {
                 } else if (!cHandler.getBR().getMessages().isEmpty()) {
                     cHandler.getBR().considerMsgRecent();
                     currentState = CCPState.BRMsgReceived;
-                } else if((currL - cHandler.getBR().getlastMsgTime() > 2000)) {
+                } else if((currL - cHandler.getBR().getlastMsgTime() > 1000)) {
                     cHandler.sendSTATRQ();
                     currentState = CCPState.SentStateREQ;
                 }else if ((currL - cHandler.getMCP().getlastMsgTime() > 2000)) {
@@ -98,9 +99,9 @@ class Controller {
                 System.out.println("SentInstruction");
                 cHandler.recievePacket();
 
-                if(!cHandler.getBR().gotAckEx()) {
+                if(cHandler.getBR().gotAckEx()) {
                     cHandler.getBR().resetMsgAttempts();
-                    currentState = CCPState.BRMsgReceived;
+                    currentState = CCPState.Listening;
                 }else if(cHandler.getBR().getAttempts() >= 3) {
                     cHandler.getBR().setStatus(false);
                     currentState = CCPState.Error;
@@ -112,7 +113,7 @@ class Controller {
             case SentStateREQ:
                 System.out.println("SentStateREQ");
                 cHandler.recievePacket();
-                if(!cHandler.getBR().gotStateUpdate()) {
+                if(cHandler.getBR().gotStateUpdate()) {
                     cHandler.getBR().resetMsgAttempts();
                     currentState = CCPState.BRMsgReceived;
                 }else if(cHandler.getBR().getAttempts() >= 3) {
@@ -127,7 +128,7 @@ class Controller {
                 System.out.println("SentData");
                 
                 cHandler.recievePacket();
-                if(!cHandler.getMCP().gotAckSt()) {
+                if(cHandler.getMCP().gotAckSt()) {
                     cHandler.getMCP().resetMsgAttempts();
                     currentState = CCPState.Listening;
                 }else if(cHandler.getMCP().getAttempts() >= 3) {

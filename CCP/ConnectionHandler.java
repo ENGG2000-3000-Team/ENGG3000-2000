@@ -51,6 +51,7 @@ public class ConnectionHandler {
             System.out.println("Failed to parse:"+e);
             return;
         }
+        
 
         if(msg.get("client_type").equals("ccp")) {
             mcp.addMessage(msg);
@@ -96,11 +97,6 @@ public class ConnectionHandler {
     }
 
     public boolean gotMCPAckIN() {
-        // return mcp.gotAckIN();
-        return true;
-    }
-
-    public boolean gotBRAckIN() {
-        return br17Con.gotAckIN();
+        return mcp.gotAckIN();
     }
 }
