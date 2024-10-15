@@ -10,7 +10,6 @@ public class BR17 extends Connection{
     protected byte IPAddress[] = {10,20,30,117};
     BR17() {
         super("BR17", false);
-
         try {
             address = InetAddress.getByAddress(IPAddress);
         } catch (Exception e) {
@@ -26,7 +25,7 @@ public class BR17 extends Connection{
         msgJ.put("sequence_number", generateRandom());
 
         if(msg.equals("AKIN")) {
-            msgJ.put("message", "AKIN");
+            msgJ.put("message", msg);
         }else if(!msg.isEmpty()) {
             msgJ.put("message", "EXEC");
             msgJ.put("cmd", msg);
@@ -64,6 +63,12 @@ public class BR17 extends Connection{
     }
 
     public boolean gotStateUpdate() {
-        return messages.get(0).get("message").equals("STAT");
+        for(int i=0; i<messages.size(); i++) {
+            if(messages.get(i).get("message").equals("STAT")) {
+                consideringMsg = messages.get(i);
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -1,9 +1,9 @@
 package CCP;
 
 public class RecieverThread implements Runnable{
-    private ConHandler handle;
+    private ConnectionHandler handle;
     
-    public RecieverThread(ConHandler handle) {
+    public RecieverThread(ConnectionHandler handle) {
         this.handle = handle;
     }
 

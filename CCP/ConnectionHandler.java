@@ -8,16 +8,16 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-public class ConHandler {
+public class ConnectionHandler {
     //Connection Handeling
     private DatagramSocket socket;
     private byte[] buf;
     private JSONParser parser;
     private MCP mcp;
     private BR17 br17Con;
-    private ExecutorService threadPool;
+    private ExecutorService threadExecutor;
 
-    ConHandler() {
+    ConnectionHandler() {
         try {
             socket = new DatagramSocket(3017);
         }catch(Exception e) {
@@ -28,11 +28,11 @@ public class ConHandler {
         parser = new JSONParser();
         br17Con = new BR17();
         mcp = new MCP();
-        threadPool = Executors.newFixedThreadPool(1);
+        threadExecutor = Executors.newSingleThreadExecutor();
     }
 
     public void recievePacket() {
-        threadPool.submit(new RecieverThread(this));
+        threadExecutor.submit(new RecieverThread(this));
     }
 
     public void recievePacketAsync() {
@@ -48,7 +48,7 @@ public class ConHandler {
         try {
             msg = (JSONObject) parser.parse(received);
         } catch (ParseException e) {
-            System.out.println(e);
+            System.out.println("Failed to parse:"+e);
             return;
         }
 
@@ -72,7 +72,7 @@ public class ConHandler {
     }
 
     public void sendAKINIT() {
-        mcp.sendPacket("",socket);
+        br17Con.sendPacket("AKIN",socket);
     }
 
     public void sendSTAT(String state) {
@@ -96,7 +96,8 @@ public class ConHandler {
     }
 
     public boolean gotMCPAckIN() {
-        return mcp.gotAckIN();
+        // return mcp.gotAckIN();
+        return true;
     }
 
     public boolean gotBRAckIN() {

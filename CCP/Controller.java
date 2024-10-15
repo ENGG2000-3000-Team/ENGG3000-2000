@@ -16,13 +16,12 @@ class Controller {
         DEAD
     }
     private static Carriage br17;
-    private static ConHandler cHandler;
+    private static ConnectionHandler cHandler;
     private static CCPState currentState = CCPState.Initialize;
 
     public static void main(String[] args) {
-        cHandler = new ConHandler();
+        cHandler = new ConnectionHandler();
         br17 = new Carriage();
-        // DatagramPacket packet = new DatagramPacket("hi", 2, (IPadd), 2000);
         for (;;) {
             processControl();
         }
@@ -47,7 +46,6 @@ class Controller {
                 }
                 break;
             case MCPConnected:
-            System.out.println("MCPConnected");
                 cHandler.recievePacket();
 
                 if (cHandler.getBR().gotINIT()) {
@@ -78,31 +76,21 @@ class Controller {
                 break;
             case MCPCmdReceived: //Either gives carriage new instruction or asks status update
                 System.out.println("MCPCmdReceived");
-                if (isValid(cHandler.getMCP().viewConsidered(),1)) {
-                    if (isStatusReq(cHandler.getMCP().viewConsidered())) {
-                        cHandler.sendSTAT(br17.getState());
-                        currentState = CCPState.SentData;
-                    } else {
-                        cHandler.sendEXEC((String)cHandler.getMCP().viewConsidered().get("action"));
-                        currentState = CCPState.SentInstruction;
-                    }
-                } else { //Invalid msg
-                    System.out.println("Ignoring invalid message MCP: <" + cHandler.getMCP().viewConsidered() + ">");
+                if (isStatusReq(cHandler.getMCP().viewConsidered())) {
+                    cHandler.sendSTAT(br17.getState());
                     currentState = CCPState.Listening;
+                } else {
+                    cHandler.sendEXEC((String)cHandler.getMCP().viewConsidered().get("action"));
+                    currentState = CCPState.SentInstruction;
                 }
                 break;
             case BRMsgReceived:
                 System.out.println("BRMsgReceived");
-                if (isValid(cHandler.getBR().viewConsidered(), 0)) { //If the message is invalid
-                    br17.update(cHandler.getBR().viewConsidered());
-                    if (br17.getState() == "Error" || br17.getState() == "Stopped" || br17.getState() == "AtStation") {//TODO CHange states
-                        cHandler.sendSTAT(br17.getState());
-                        currentState = CCPState.SentData;
-                    } else {
-                        currentState = CCPState.Listening;
-                    }
+                br17.update(cHandler.getBR().viewConsidered());
+                if (br17.getState() == "Error" || br17.getState() == "Stopped" || br17.getState() == "AtStation") {//TODO CHange states
+                    cHandler.sendSTAT(br17.getState());
+                    currentState = CCPState.SentData;
                 } else {
-                    System.out.println("Ignoring invalid message MCP: <" + cHandler.getBR().viewConsidered() + ">");
                     currentState = CCPState.Listening;
                 }
                 break;
@@ -159,9 +147,12 @@ class Controller {
                     cHandler.sendEXEC("STOP");
                     currentState = CCPState.DEAD;
                 }
-                if (!cHandler.getBR().getStatus()) { //lost connection with br17
+                if (!cHandler.getBR().getStatus() && cHandler.getMCP().getStatus()) { //lost connection with br17
                     cHandler.sendSTAT("ERR");
-                    currentState = CCPState.DEAD;
+                    currentState = CCPState.MCPConnected;
+                }
+                if(!cHandler.getBR().getStatus() && !cHandler.getMCP().getStatus()) {
+                    currentState = CCPState.Initialize;
                 }
                 break;
             case DEAD:
@@ -172,17 +163,10 @@ class Controller {
         }
     }
 
-    private static boolean isStatusReq(JSONObject msg) {
+    private static boolean isStatusReq(JSONObject msg) {//TODO move into MCP
         if(msg.get("message").equals("STATRQ")) {
             return true;
         }
         return false;
-    }
-
-    public static boolean isValid(JSONObject cmd, int type) {
-        if(cmd == null) {
-            return false;
-        }
-        return true;
     }
 }
