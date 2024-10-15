@@ -1,14 +1,14 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
-#include <NewPing.h>
+// #include <NewPing.h>
 #include <ArduinoJson.h>
 #include <iostream>
 using namespace std;
 
 // Define motor pins
-const int motorPin1 = 18; // Motor control pin 1
-const int motorPin2 = 19; // Motor control pin 2
-const int motorPWM = 21;  // PWM pin for motor speed
+const int motorPin1 = 18;  // Motor control pin 1
+const int motorPin2 = 19;  // Motor control pin 2
+const int motorPWM = 21;   // PWM pin for motor speed
 
 // Define LED pins
 const int ledRedPin = 16;
@@ -24,12 +24,12 @@ const int ledBluePin2 = 2;
 
 // WiFi credentials
 const char* ssid = "ENGG2K3K";
-IPAddress staticIP(10,20,30,117);
-IPAddress gateway(10,20,30,1);
+IPAddress staticIP(10, 20, 30, 117);
+IPAddress gateway(10, 20, 30, 145);
 IPAddress subnet(255, 255, 255, 0);
 WiFiUDP udp;
 char packetBuffer[1000];
-unsigned int localPort = 9999; //Todo change needed
+unsigned int localPort = 9999;  //Todo change needed
 
 // Motor control variables
 int motorSpeed = 0;
@@ -40,15 +40,17 @@ int ledGreen = 0;
 int ledBlue = 0;
 
 // Ultrasonic variables
-#define TRIGGER_PIN  13  // ESP32 pin tied to trigger pin on the ultrasonic sensor.
-#define ECHO_PIN     12  // ESP32 pin tied to echo pin on the ultrasonic sensor.
-#define MAX_DISTANCE 200 // Maximum distance we want to ping for (in centimeters).
-unsigned long currDistance;
-unsigned long targetDistance;
-NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
+// #define TRIGGER_PIN  13  // ESP32 pin tied to trigger pin on the ultrasonic sensor.
+// #define ECHO_PIN     12  // ESP32 pin tied to echo pin on the ultrasonic sensor.
+// #define MAX_DISTANCE 200 // Maximum distance we want to ping for (in centimeters).
+// unsigned long currDistance;
+// unsigned long targetDistance;
+// NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE); // NewPing setup of pins and maximum distance.
 
 //Carriage State
-string carriageState = "In Transit";
+string carriageState;
+char netState = 'i';
+unsigned long timeSent;
 
 void setup() {
   // Set motor pins as output
@@ -69,15 +71,34 @@ void setup() {
 
   // Connect to WiFi
   connectToWiFi();
-  udp.begin(localPort);
+  udp.begin(1234);
 }
 
 void loop() {
-  netCodeRNA();
+  switch (netState) {
+    case 'i':
+      Serial.println("i");
+      netCodeSendInit();
+      netState = 'w';
+      timeSent = millis();
+      break;
+    case 'w':
+      Serial.println("w");
+      netCodeRNA();
+      if(millis()-timeSent>1000) {
+        Serial.println("Failed to get ACKIN");
+        netState = 'i';
+      }
+      break;
+    case 'r':
+      Serial.println("r");
+      netCodeRNA();
+      break;
+  }
   ultrasonicDetect();
   // Read the IR sensor value
   //int irSensorValue = digitalRead(irSensorPin);
-    
+
   // Control motor and LEDs based on the state and IR sensor value
   if (carriageState == "Idle") {
     stopMotor();
@@ -108,13 +129,12 @@ void loop() {
     stopMotor();
     setLEDColor(128, 0, 128);  // Purple
   }
-
-  // Add delay for LED flashing effect
-  delay(500);
 }
 
 void netCodeRNA() {
   int packetSize = udp.parsePacket();
+  Serial.print("packetSize: ");
+  Serial.println(packetSize);
   if (packetSize) {
     // receive incoming UDP packets
     Serial.printf("Received %d bytes from %s, port %d\n", packetSize, udp.remoteIP().toString().c_str(), udp.remotePort());
@@ -125,10 +145,6 @@ void netCodeRNA() {
     Serial.printf("UDP packet contents: %s\n", packetBuffer);
     JsonDocument doc;
     DeserializationError error = deserializeJson(doc, packetBuffer);
-    if (error) {
-      Serial.println("Parsing failed");
-      return;
-    }
 
     JsonDocument doc1;
     JsonObject encoder = doc1.add<JsonObject>();
@@ -138,21 +154,33 @@ void netCodeRNA() {
 
     //if Packet is status request send back status else if exec cmd save new status
     const String msgType = doc["message"];
+    std::string packet = "";
+    const uint8_t* temp;
+
+    Serial.println(msgType);
     if (msgType[0] == 'S') {
-      udp.beginPacket(gateway, 3017);
       encoder["message"] = "STAT";
       encoder["state"] = carriageState;
+      serializeJson(encoder, packet);
+      const uint8_t* temp = stringToUni8Arr(packet);
 
+      udp.beginPacket(gateway, 3017);
       udp.write(encoder);
       udp.endPacket();
     } else if (msgType[0] == 'E') {
-      string temp(doc["cmd"]); 
+      string temp(doc["cmd"]);
       carriageState = temp;
-      udp.beginPacket(gateway, 3017);
       encoder["message"] = "AKEX";
-      udp.write(encoder);
+
+      serializeJson(encoder, packet);
+
+      udp.beginPacket(gateway, 3017);
+      udp.write(stringToUni8Arr(packet), packet.length());
       udp.endPacket();
-    }
+    } else if (msgType[0] == 'A') {
+      carriageState = "Idle";
+      netState = 'r';
+    } 
   }
 }
 
@@ -165,9 +193,39 @@ void netCodeUpdate() {
   encoder["message"] = "STAT";
   encoder["state"] = carriageState;
 
+  std::string packet = "";
+  serializeJson(encoder, packet);
+  const uint8_t* temp = stringToUni8Arr(packet);
+
   udp.beginPacket(gateway, 3017);
-  udp.print(encoder);
+  udp.write(temp, packet.length());
   udp.endPacket();
+}
+
+void netCodeSendInit() {
+  JsonDocument doc;
+  JsonObject encoder = doc.add<JsonObject>();
+  encoder["client_type"] = "BR";
+  encoder["client_id"] = "BR17";
+  encoder["sequence_number"] = random(1000, 30000);
+  encoder["message"] = "BRIN";
+
+  std::string packet = "";
+  serializeJson(encoder, packet);
+
+  udp.beginPacket(gateway, 3017);
+  udp.write(stringToUni8Arr(packet), packet.length());
+  udp.endPacket();
+}
+
+const uint8_t* stringToUni8Arr(const std::string& str) {
+  const char* cstr = str.c_str();
+  size_t len = strlen(cstr);
+
+  uint8_t* temp = new uint8_t[len + 1];
+  memcpy(temp, cstr, len + 1);
+
+  return temp;
 }
 
 // Connect to WiFi
@@ -199,26 +257,26 @@ void moveMotorForward() {
   //   Serial.println(i);
   // }
 
-while (true){
-  while (Serial.available() > 0)
-    {
-      int speed;
-      speed = Serial.parseInt();  // parseInt() reads in the first integer value from the Serial Monitor.
-      speed = constrain(speed, 0, 255); // constrains the speed between 0 and 255 because analogWrite() only works in this range.
+  // while (true){
+  //   while (Serial.available() > 0)
+  //     {
+  //       int speed;
+  //       speed = Serial.parseInt();  // parseInt() reads in the first integer value from the Serial Monitor.
+  //       speed = constrain(speed, 0, 255); // constrains the speed between 0 and 255 because analogWrite() only works in this range.
 
-      Serial.print("Setting speed to ");  // feedback and prints out the speed that you entered.
-      Serial.println(speed);
+  //       Serial.print("Setting speed to ");  // feedback and prints out the speed that you entered.
+  //       Serial.println(speed);
 
-      analogWrite(motorPWM, speed);  // sets the speed of the motor.
-    }
-    }
+  //       analogWrite(motorPWM, speed);  // sets the speed of the motor.
+  //     }
+  //     }
 }
 
 void stopMotor() {
   digitalWrite(motorPin1, LOW);
   digitalWrite(motorPin2, LOW);
   //analogWrite(motorPWM, 0);  // Stop motor
-  for(int i=255; i>=0; i=i-5){
+  for (int i = 255; i >= 0; i = i - 5) {
     analogWrite(motorPWM, i);  // Full speed
     delay(500);
     Serial.println(i);
@@ -241,3 +299,4 @@ void ultrasonicDetect() {
   if (currDistance < targetDistance) {
     carriageState == "Collision Avoidance";
   }
+}
