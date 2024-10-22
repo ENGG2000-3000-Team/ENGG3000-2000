@@ -55,7 +55,7 @@ public class BR17 extends Connection{
     }
 
     public boolean gotINIT() {
-        if(messages == null) return false;
+        if(messages == null) return true;
         for(int i=0; i<messages.size(); i++) {
             if(messages.get(i).get("message").equals("BRIN")) {
                 expectedSeq = Integer.valueOf(messages.get(i).get("sequence_number").toString());
@@ -63,7 +63,7 @@ public class BR17 extends Connection{
                 return true;
             }
         }
-        return false;
+        return true;
     }
 
     public boolean gotStateUpdate() {

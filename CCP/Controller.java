@@ -190,7 +190,7 @@ class Controller {
     }
 
     private static boolean isStatusReq(JSONObject msg) {
-        if(msg.get("message").equals("STATRQ")) {
+        if(msg.get("message").equals("STRQ")) {
             return true;
         }
         return false;

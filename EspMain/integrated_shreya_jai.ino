@@ -41,9 +41,9 @@ enum State {
   INITIALIZE,
   STOPPED,
   BACKWARDS_SLOW,
-  ACCELERATING,
-  CRUISE,
-  SLOW_DOWN,
+  FFAST,
+  FSLOW,
+  STOP,
   STOP_AT_STATION,
   ERROR_HAZARD,
   E_STOP
@@ -234,16 +234,20 @@ void netSendInit() {
   udp.endPacket();
 }
 
-void changeState(String s) {
+void changeState(std::string s) {
   const char* state = s.c_str();
-  if(strcmp(state, "SLOW_DOWN") == 0){
-    carriageState = SLOW_DOWN;
+  if(strcmp(state, "STOP") == 0){
+    carriageState = STOP;
   }else if(strcmp(state, "STOP_AT_STATION") == 0) {
     carriageState = STOP_AT_STATION;
   }else if(strcmp(state, "FSLOW") == 0) {
-    carriageState = STOP_AT_STATION; //TODO Change based on current spd
+    desiredSpeed = 50;
+    carriageState = FSLOW;
+    netSendUpdate();
   }else if(strcmp(state, "FFAST") == 0) {
-    carriageState = STOP_AT_STATION; //TODO Change based on current spd
+    desiredSpeed = 155;
+    carriageState = FFAST;
+    netSendUpdate();
   }else if(strcmp(state, "BACKWARDS_SLOW") == 0) {
     carriageState = BACKWARDS_SLOW;
   }else if(strcmp(state, "E_STOP") == 0) {
@@ -264,7 +268,7 @@ void handleCarriageState() {
       stopMotor();
       setLEDColor(255, 255, 0);  // Yellow
       if (!atStation()) {
-        carriageState = ACCELERATING;
+        carriageState = FSLOW;
         netSendUpdate();
         closeDoors();
       }
@@ -274,30 +278,18 @@ void handleCarriageState() {
       carriageState = STOPPED;
       netSendUpdate();
       break;
-    case ACCELERATING:  //TODO Change to acheive speed sent by CCP then send back an update
-      Serial.println("State: ACCELERATING");
+    case FFAST:  //TODO Change to acheive speed sent by CCP then send back an update
+      Serial.println("State: FFAST");
       setLEDColor(0, 0, 255);  // Blue
-      if (!ccpConnectionLost && !packetDelay) {
-        carriageState = CRUISE;
-        netSendUpdate();
-      } else {
-        carriageState = ERROR_HAZARD;
-        netSendUpdate();
-      }
+      moveMotorForward();
       break;
-    case CRUISE:  //TODO Change to acheive speed sent by CCP then send back an update
-      Serial.println("State: CRUISE");
+    case FSLOW:  //TODO Change to acheive speed sent by CCP then send back an update
+      Serial.println("State: FSLOW");
       setLEDColor(0, 0, 255);  // Blue
-      if (ccpConnectionLost || packetDelay) {
-        carriageState = ERROR_HAZARD;
-        netSendUpdate();
-      } else {
-        carriageState = SLOW_DOWN;
-        netSendUpdate();
-      }
+      moveMotorForward();
       break;
-    case SLOW_DOWN:  //TODO Change to acheive speed sent by CCP then send back an update
-      Serial.println("State: SLOW_DOWN");
+    case STOP:  //TODO Change to acheive speed sent by CCP then send back an update
+      Serial.println("State: STOP");
       stopMotor();
       setLEDColor(255, 255, 0);  // Yellow
       carriageState = STOPPED;
@@ -351,7 +343,7 @@ float getDistance() {
 void moveMotorForward() {
   digitalWrite(motorPin1, HIGH);
   digitalWrite(motorPin2, LOW);
-  analogWrite(motorPWM, Testspeed);  // Start motor at specified speed
+  analogWrite(motorPWM, desiredSpeed);  // Start motor at specified speed
 }
 
 void stopMotor() {
@@ -411,11 +403,9 @@ String sendCarriageState(State state) {
     case INITIALIZE: stateStr = "INITIALIZE"; break;
     case STOPPED: stateStr = "STOPPED"; break;
     case BACKWARDS_SLOW: stateStr = "BACKWARDS_SLOW"; break;
-    case ACCELERATING: stateStr = "ACCELERATING"; break;
-    case CRUISE:
-      stateStr = "CRUISE";  //TODO Change to be able to send Cruise at what speed slow or fast??
-      break;
-    case SLOW_DOWN: stateStr = "SLOW_DOWN"; break;
+    case FFAST: stateStr = "FFAST"; break;
+    case FSLOW: stateStr = "FFSLOW"; break;
+    case STOP: stateStr = "STOP"; break;
     case STOP_AT_STATION: stateStr = "STOP_AT_STATION"; break;
     case ERROR_HAZARD: stateStr = "ERROR_HAZARD"; break;
     case E_STOP: stateStr = "E_STOP"; break;
