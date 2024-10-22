@@ -13,6 +13,10 @@ const int ledRedPin = 16;
 const int ledGreenPin = 5;
 const int ledBluePin = 17;
 
+// Define ultrasonic sensor pins
+const int trigPin = 13;
+const int echoPin = 12;
+
 // WiFi credentials/Net
 const char* ssid = "ENGG2K3K";
 IPAddress staticIP(10, 20, 30, 117);
@@ -71,6 +75,9 @@ void setup() {
 void loop() {
   // Listen for CCP commands
   netChangeState();
+  float distance = getDistance();
+  if (distance <= 6) carriageState = STOPC;
+  else if (distance <= 20) carriageState = FSLOWC;
 
   // Execute state logic
   switch (carriageState) {
@@ -110,6 +117,27 @@ void loop() {
   if (millis() - lastHeartbeatTime > heartbeatInterval) {
     carriageState = ESTOP;  // Simulate heartbeat check
   }
+}
+
+float getDistance() {
+  long duration;
+  float distance;
+
+  // Send a 10us pulse to trigger the sensor
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  // Read the echoPin and calculate the distance based on the duration
+  duration = pulseIn(echoPin, HIGH);
+
+  // Convert the time into distance (Speed of sound is 343 meters per second).
+  // Divide by 2 because the sound travels to the object and back.
+  distance = duration * 0.034 / 2;
+
+  return distance;  // Distance in cm
 }
 
 // Functions for Different States
