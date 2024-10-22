@@ -81,7 +81,7 @@ class Controller {
                     cHandler.sendSTAT(br17.getState());
                     currentState = CCPState.Listening;
                 } else {
-                    cHandler.sendEXEC((String)cHandler.getMCP().processCmd());
+                    cHandler.sendEXEC((String)cHandler.getMCP().viewConsidered().get("action"));
                     currentState = CCPState.SentInstruction;
                 }
                 break;
