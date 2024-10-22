@@ -88,8 +88,8 @@ class Controller {
             case BRMsgReceived:
                 System.out.println("BRMsgReceived");
                 br17.update(cHandler.getBR().viewConsidered()); 
-                if (br17.getState() == "ERROR_HAZARD" || br17.getState() == "STOPPED" || br17.getState() == "STOP_AT_STATION" || br17.getState() == "FSLOW" || br17.getState() == "FFAST") {
-                    cHandler.sendSTAT(translate(br17.getState()));
+                if (br17.getState() == "ERR" || br17.getState() == "OFLN" || br17.getState() == "STOPO" || br17.getState() == "RSLOWC" || br17.getState() == "FFASTC" || br17.getState() == "FSLOWC" || br17.getState() == "STOPC") {
+                    cHandler.sendSTAT(br17.getState());
                     currentState = CCPState.SentData;
                 } else {
                     currentState = CCPState.Listening;
@@ -162,31 +162,6 @@ class Controller {
                 System.out.println("BR17: "+cHandler.getBR().getStatus());
                 System.exit(0);
         }
-    }
-
-    private static String translate(String state) {
-        String result = "";
-        switch (state) {
-            case "SLOW_DOWN":
-                result = "STOPC";
-            break;
-            case "STOP_AT_STATION":
-                result = "STOPO";
-            break;
-            case "FSLOW":
-                result = "FSLOWC";
-            break;
-            case "FFAST":
-                result = "FFASTC";
-            break;
-            case "BACKWARDS_SLOW":
-                result = "RSLOWC";
-            break;
-            case "E_STOP":
-                result = "DISCONNECT";
-            break;
-        }
-        return result;
     }
 
     private static boolean isStatusReq(JSONObject msg) {
