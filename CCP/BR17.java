@@ -43,6 +43,7 @@ public class BR17 extends Connection{
     }
 
     public boolean gotAckEx() {
+        if(messages == null) return false;
         for(int i=0; i<messages.size(); i++) {
             if(messages.get(i).get("message").equals("ACKEX")) {
                 messages.remove(i);
@@ -54,6 +55,7 @@ public class BR17 extends Connection{
     }
 
     public boolean gotINIT() {
+        if(messages == null) return false;
         for(int i=0; i<messages.size(); i++) {
             if(messages.get(i).get("message").equals("BRIN")) {
                 expectedSeq = Integer.valueOf(messages.get(i).get("sequence_number").toString());
@@ -65,6 +67,7 @@ public class BR17 extends Connection{
     }
 
     public boolean gotStateUpdate() {
+        if(messages == null) return false;
         for(int i=0; i<messages.size(); i++) {
             if(messages.get(i).get("message").equals("STAT")) {
                 consideringMsg = messages.get(i);

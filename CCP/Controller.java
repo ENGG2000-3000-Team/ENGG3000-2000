@@ -32,7 +32,7 @@ class Controller {
             case Initialize:
                 cHandler.recievePacket();
                 long currA = System.currentTimeMillis();
-
+                
                 if (cHandler.gotMCPAckIN()) {
                     cHandler.getMCP().startListening();
                 }
@@ -81,15 +81,15 @@ class Controller {
                     cHandler.sendSTAT(br17.getState());
                     currentState = CCPState.Listening;
                 } else {
-                    cHandler.sendEXEC((String)cHandler.getMCP().viewConsidered().get("action"));
+                    cHandler.sendEXEC((String)cHandler.getMCP().processCmd());
                     currentState = CCPState.SentInstruction;
                 }
                 break;
             case BRMsgReceived:
                 System.out.println("BRMsgReceived");
-                br17.update(cHandler.getBR().viewConsidered());
-                if (br17.getState() == "Error" || br17.getState() == "Stopped" || br17.getState() == "AtStation") {//TODO CHange states
-                    cHandler.sendSTAT(br17.getState());
+                br17.update(cHandler.getBR().viewConsidered()); 
+                if (br17.getState() == "ERROR_HAZARD" || br17.getState() == "STOPPED" || br17.getState() == "STOP_AT_STATION" || br17.getState() == "FSLOW" || br17.getState() == "FFAST") {
+                    cHandler.sendSTAT(translate(br17.getState()));
                     currentState = CCPState.SentData;
                 } else {
                     currentState = CCPState.Listening;
@@ -164,7 +164,32 @@ class Controller {
         }
     }
 
-    private static boolean isStatusReq(JSONObject msg) {//TODO move into MCP
+    private static String translate(String state) {
+        String result = "";
+        switch (state) {
+            case "SLOW_DOWN":
+                result = "STOPC";
+            break;
+            case "STOP_AT_STATION":
+                result = "STOPO";
+            break;
+            case "FSLOW":
+                result = "FSLOWC";
+            break;
+            case "FFAST":
+                result = "FFASTC";
+            break;
+            case "BACKWARDS_SLOW":
+                result = "RSLOWC";
+            break;
+            case "E_STOP":
+                result = "DISCONNECT";
+            break;
+        }
+        return result;
+    }
+
+    private static boolean isStatusReq(JSONObject msg) {
         if(msg.get("message").equals("STATRQ")) {
             return true;
         }

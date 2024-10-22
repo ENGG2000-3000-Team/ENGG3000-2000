@@ -64,6 +64,7 @@ public class MCP extends Connection{
     }
 
     public boolean gotAckSt() {
+        if(messages == null) return false;
         for(int i=0; i<messages.size(); i++) {
             if(messages.get(i).get("message").equals("AKST")) {
                 messages.remove(i);
@@ -72,5 +73,31 @@ public class MCP extends Connection{
             }
         }
         return false;
+    }
+
+    public String processCmd() {
+        String exec = (String)viewConsidered().get("action");
+        String result = "";
+        switch (exec) {
+            case "STOPC":
+                result = "SLOW_DOWN";
+            break;
+            case "STOPO":
+                result = "STOP_AT_STATION";
+            break;
+            case "FSLOWC":
+                result = "FSLOW";
+            break;
+            case "FFASTC":
+                result = "FFAST";
+            break;
+            case "RSLOWC":
+                result = "BACKWARDS_SLOW";
+            break;
+            case "DISCONNECT":
+                result = "E_STOP";
+            break;
+        }
+        return result;
     }
 }

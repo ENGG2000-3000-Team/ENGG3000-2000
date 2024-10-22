@@ -16,7 +16,7 @@ public abstract class Connection {
     protected long lastMsgTime;
     protected long timeSent;
     protected int msgAttempts;
-    protected int internalSeq = 1001;
+    protected int internalSeq = 3291;
     protected int expectedSeq;
 
     Connection(String n, boolean s) {
@@ -95,6 +95,7 @@ public abstract class Connection {
     }
 
     protected boolean gotAckIN() {
+        if(messages == null) return false;
         for(int i=0; i<messages.size(); i++) {
             System.out.println(messages.get(i));
             if(messages.get(i).get("message").equals("AKIN")) {

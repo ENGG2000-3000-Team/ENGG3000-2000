@@ -1,6 +1,5 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
-// #include <NewPing.h>
 #include <ArduinoJson.h>
 #include <iostream>
 using namespace std;
