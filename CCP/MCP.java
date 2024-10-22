@@ -80,7 +80,7 @@ public class MCP extends Connection{
         String result = "";
         switch (exec) {
             case "STOPC":
-                result = "SLOW_DOWN";
+                result = "STOP";
             break;
             case "STOPO":
                 result = "STOP_AT_STATION";
