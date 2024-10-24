@@ -42,7 +42,6 @@ public abstract class Connection {
 
         if(messages.isEmpty()) {
             messages.add(s);
-            System.out.println(messages);
             return;
         }
         for(int i=0; i<messages.size(); i++) {
@@ -68,6 +67,10 @@ public abstract class Connection {
 
     public int getAttempts() {
         return msgAttempts;
+    }
+
+    public void setlastMsgTime(long x) {
+        lastMsgTime = x;
     }
 
     public void resetMsgAttempts() {
@@ -97,7 +100,6 @@ public abstract class Connection {
     protected boolean gotAckIN() {
         if(messages == null) return false;
         for(int i=0; i<messages.size(); i++) {
-            System.out.println(messages.get(i));
             if(messages.get(i).get("message").equals("AKIN")) {
                 expectedSeq = Integer.valueOf(messages.get(i).get("sequence_number").toString());
                 messages.remove(i);

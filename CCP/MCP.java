@@ -9,6 +9,7 @@ import org.json.simple.JSONObject;
 public class MCP extends Connection{
     protected InetAddress address;
     protected byte IPAddress[] = {(byte)127,0,0,1};
+    private int mcpPort = 2000;
     MCP() {
         super("MCP", false);
 
@@ -32,16 +33,16 @@ public class MCP extends Connection{
         msgJ.put("sequence_number", internalSeq);
 
         byte[] buffer = msgJ.toJSONString().getBytes();
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, 2000);
+        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, mcpPort);
         try {
             socket.send(packet);
-        }catch(Exception e) {
-            System.out.println(""+e);
-        }
+        }catch(Exception e) {}
     }
 
     @SuppressWarnings("unchecked")
     public void sendPacket(String msg, DatagramSocket socket) {
+        timeSent = System.currentTimeMillis();
+        msgAttempts++;
         JSONObject msgJ = new JSONObject();
         msgJ.put("client_type", "CCP");
         msgJ.put("client_id", "BR17");
@@ -55,12 +56,10 @@ public class MCP extends Connection{
         }
 
         byte[] buffer = msgJ.toJSONString().getBytes();
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, 2000);
+        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, mcpPort);
         try {
             socket.send(packet);
-        }catch(Exception e) {
-            System.out.println(""+e);
-        }
+        }catch(Exception e) {}
     }
 
     public boolean gotAckSt() {

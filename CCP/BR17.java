@@ -8,6 +8,7 @@ import org.json.simple.JSONObject;
 public class BR17 extends Connection{
     protected InetAddress address;
     protected byte IPAddress[] = {10,20,30,117};
+    private int brPort = 1234;
     BR17() {
         super("BR17", false);
         try {
@@ -20,7 +21,7 @@ public class BR17 extends Connection{
     @SuppressWarnings("unchecked")
     public void sendPacket(String msg, DatagramSocket socket) {
         JSONObject msgJ = new JSONObject();
-        msgJ.put("client_type", "FCCP");
+        msgJ.put("client_type", "BCCP");
         msgJ.put("client_id", "BR17");
         msgJ.put("sequence_number", internalSeq);
 
@@ -31,15 +32,16 @@ public class BR17 extends Connection{
             msgJ.put("cmd", msg);
         }else {
             msgJ.put("message", "STATRQ");
+            msgAttempts++;
         }
 
         byte[] buffer = msgJ.toJSONString().getBytes();
-        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, 1234);
+        DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, brPort);
         try {
             socket.send(packet);
-        }catch(Exception e) {
-            System.out.println(""+e);
-        }
+        }catch(Exception e) {}
+        timeSent = System.currentTimeMillis();
+        msgAttempts++;
     }
 
     public boolean gotAckEx() {
@@ -55,7 +57,7 @@ public class BR17 extends Connection{
     }
 
     public boolean gotINIT() {
-        if(messages == null) return true;
+        if(messages == null) return false;
         for(int i=0; i<messages.size(); i++) {
             if(messages.get(i).get("message").equals("BRIN")) {
                 expectedSeq = Integer.valueOf(messages.get(i).get("sequence_number").toString());
@@ -63,7 +65,7 @@ public class BR17 extends Connection{
                 return true;
             }
         }
-        return true;
+        return false;
     }
 
     public boolean gotStateUpdate() {

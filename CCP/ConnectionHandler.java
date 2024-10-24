@@ -28,7 +28,7 @@ public class ConnectionHandler {
         parser = new JSONParser();
         br17Con = new BR17();
         mcp = new MCP();
-        threadExecutor = Executors.newSingleThreadExecutor();
+        threadExecutor = Executors.newFixedThreadPool(2);
     }
 
     public void recievePacket() {
@@ -51,7 +51,6 @@ public class ConnectionHandler {
             System.out.println("Failed to parse:"+e);
             return;
         }
-        
 
         if(msg.get("client_type").equals("ccp")) {
             mcp.addMessage(msg);

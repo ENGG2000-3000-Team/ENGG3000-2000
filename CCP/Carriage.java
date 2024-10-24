@@ -6,11 +6,12 @@ public class Carriage {
     private String carriageState;
 
     Carriage() {
-        carriageState = "state";
+        carriageState = "OFLN";
     }
 
     public void update(JSONObject cMsg) {
         System.out.println("updated with this message: "+cMsg);
+        carriageState = cMsg.get("state").toString();
     }
 
     public String getState() {

@@ -20,11 +20,11 @@ const int echoPin = 12;
 // WiFi credentials/Net
 const char* ssid = "ENGG2K3K";
 IPAddress staticIP(10, 20, 30, 117);
-IPAddress gateway(10, 20, 30, 145);
+IPAddress gateway(10, 20, 30, 140);
 IPAddress subnet(255, 255, 255, 0);
 WiFiUDP udp;
 char packetBuffer[1000];
-unsigned int localPort = 9999;  //Todo change needed
+unsigned int remotePort = 3017;
 char netState = 'i';
 unsigned long timeSent;
 unsigned long seqNum = random(1000, 30000);
@@ -47,8 +47,9 @@ enum CarriageState {
 // Variables for state management
 CarriageState carriageState = INITIALIZATION;
 unsigned long lastHeartbeatTime = 0;
-const unsigned long heartbeatInterval = 2000;  // 2 seconds for heartbeat check
+const unsigned long heartbeatInterval = 3000;  // 2 seconds for heartbeat check
 bool ackReceived = false;
+bool Estop = false;
 
 // Setup function
 void setup() {
@@ -79,6 +80,7 @@ void loop() {
   if (distance <= 6) carriageState = STOPC;
   else if (distance <= 20) carriageState = FSLOWC;
 
+  if(Estop) carriageState = ESTOP;
   // Execute state logic
   switch (carriageState) {
     case INITIALIZATION:
@@ -104,6 +106,7 @@ void loop() {
       break;
     case ESTOP:
       emergencyStop();
+      Estop = false;
       break;
     case ERROR:
       handleError();
@@ -111,11 +114,6 @@ void loop() {
     case DEAD:
       handleDeadState();
       break;
-  }
-
-  // Heartbeat mechanism for communication integrity
-  if (millis() - lastHeartbeatTime > heartbeatInterval) {
-    carriageState = ESTOP;  // Simulate heartbeat check
   }
 }
 
@@ -322,14 +320,18 @@ void netChangeState() {
       timeSent = millis();
       break;
     case 'w':
-      netReceiveNAck();
       if (millis() - timeSent > 1000) {
         Serial.println("Failed to get ACKIN");
         netState = 'i';
       }
+      netReceiveNAck();
       break;
     case 'r':
       netReceiveNAck();
+      // Heartbeat mechanism for communication integrity
+      if (millis() - lastHeartbeatTime > heartbeatInterval) {
+        Estop = true; 
+      }
       break;
   }
 }
@@ -373,7 +375,7 @@ void netReceiveNAck() {
       Serial.println("recieved STATREQ sent back STAT");
       lastHeartbeatTime = millis();
 
-      udp.beginPacket(gateway, 3017);
+      udp.beginPacket(gateway, remotePort);
       udp.write(stringToUni8Arr(packet), packet.length());
       udp.endPacket();
     } else if (msgType[0] == 'E') {
@@ -384,10 +386,11 @@ void netReceiveNAck() {
       serializeJson(encoder, packet);
       Serial.print("recieved EXEC executing: ");
 
-      udp.beginPacket(gateway, 3017);
+      udp.beginPacket(gateway, remotePort);
       udp.write(stringToUni8Arr(packet), packet.length());
       udp.endPacket();
     } else if (msgType[0] == 'A') {
+      Serial.println("AKIN");
       carriageState = INITIALIZATION;
       netState = 'r';
       expectedSeq = (int)doc["sequence_number"];
@@ -408,7 +411,7 @@ void netSendUpdate() {
   std::string packet = "";
   serializeJson(encoder, packet);
 
-  udp.beginPacket(gateway, 3017);
+  udp.beginPacket(gateway, remotePort);
   udp.write(stringToUni8Arr(packet), packet.length());
   udp.endPacket();
 }
@@ -425,7 +428,7 @@ void netSendInit() {
   std::string packet = "";
   serializeJson(encoder, packet);
 
-  udp.beginPacket(gateway, 3017);
+  udp.beginPacket(gateway, remotePort);
   udp.write(stringToUni8Arr(packet), packet.length());
   udp.endPacket();
 }
