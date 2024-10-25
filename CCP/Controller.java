@@ -68,7 +68,7 @@ class Controller {
                     System.out.println("SentStateREQ");
                     cHandler.getBR().resetMsgAttempts();
                     currentState = CCPState.SentStateREQ;
-                } else if ((currL - cHandler.getMCP().getlastMsgTime() > 2000000)) {
+                } else if ((currL - cHandler.getMCP().getlastMsgTime() > 2000)) {
                     cHandler.getMCP().setStatus(false);
                     System.out.println("Error");
                     currentState = CCPState.Error;
