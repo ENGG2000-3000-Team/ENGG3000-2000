@@ -444,7 +444,7 @@ String stateToString(CarriageState state) {
     case STOPO: stateStr = "STOPO"; break;
     case OFLN: stateStr = "OFLN"; break;
     case ESTOP: stateStr = "ESTOP"; break;
-    case ERROR: stateStr = "ERROR"; break;
+    case ERROR: stateStr = "ERR"; break;
     case DEAD: stateStr = "DEAD"; break;
   }
   return stateStr;  // Send state over Serial

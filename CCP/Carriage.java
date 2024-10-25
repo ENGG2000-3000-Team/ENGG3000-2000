@@ -10,7 +10,6 @@ public class Carriage {
     }
 
     public void update(JSONObject cMsg) {
-        System.out.println("updated with this message: "+cMsg);
         carriageState = cMsg.get("state").toString();
     }
 

@@ -8,6 +8,8 @@ public class RecieverThread implements Runnable{
     }
 
     public void run() {
-        handle.recievePacketAsync();
+        while(true) {
+            handle.recievePacketAsync();
+        }
     }
 }

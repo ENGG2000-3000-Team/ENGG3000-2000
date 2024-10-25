@@ -42,6 +42,8 @@ public class BR17 extends Connection{
         }catch(Exception e) {}
         timeSent = System.currentTimeMillis();
         msgAttempts++;
+        internalSeq++;
+        System.out.println("Sent BR this msg: "+msg);
     }
 
     public boolean gotAckEx() {

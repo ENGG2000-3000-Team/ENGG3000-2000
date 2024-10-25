@@ -28,7 +28,7 @@ public class ConnectionHandler {
         parser = new JSONParser();
         br17Con = new BR17();
         mcp = new MCP();
-        threadExecutor = Executors.newFixedThreadPool(2);
+        threadExecutor = Executors.newSingleThreadExecutor();
     }
 
     public void recievePacket() {

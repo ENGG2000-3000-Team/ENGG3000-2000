@@ -37,6 +37,8 @@ public class MCP extends Connection{
         try {
             socket.send(packet);
         }catch(Exception e) {}
+        System.out.println("SENT INIT");
+        internalSeq++;
     }
 
     @SuppressWarnings("unchecked")
@@ -60,6 +62,8 @@ public class MCP extends Connection{
         try {
             socket.send(packet);
         }catch(Exception e) {}
+        internalSeq++;
+        System.out.println("SENT: "+msg);
     }
 
     public boolean gotAckSt() {
