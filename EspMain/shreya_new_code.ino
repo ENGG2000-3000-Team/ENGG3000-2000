@@ -20,14 +20,14 @@ const int echoPin = 12;
 // WiFi credentials/Net
 const char* ssid = "ENGG2K3K";
 IPAddress staticIP(10, 20, 30, 117);
-IPAddress gateway(10, 20, 30, 140);
+IPAddress gateway(10, 20, 30, 149);
 IPAddress subnet(255, 255, 255, 0);
 WiFiUDP udp;
 char packetBuffer[1000];
 unsigned int remotePort = 3017;
 char netState = 'i';
 unsigned long timeSent;
-unsigned long seqNum = random(1000, 30000);
+unsigned long seqNum = 15000;
 int expectedSeq;
 
 // States Enumeration
@@ -80,7 +80,10 @@ void loop() {
   if (distance <= 6) carriageState = STOPC;
   else if (distance <= 20) carriageState = FSLOWC;
 
-  if(Estop) carriageState = ESTOP;
+  if(Estop) {
+    carriageState = ESTOP;
+    Estop = false;
+  }
   // Execute state logic
   switch (carriageState) {
     case INITIALIZATION:
@@ -329,8 +332,10 @@ void netChangeState() {
     case 'r':
       netReceiveNAck();
       // Heartbeat mechanism for communication integrity
-      if (millis() - lastHeartbeatTime > heartbeatInterval) {
+      if (millis() - lastHeartbeatTime > 10000) {
         Estop = true; 
+        netState = 'i';
+        lastHeartbeatTime = millis();
       }
       break;
   }
@@ -338,8 +343,6 @@ void netChangeState() {
 
 void netReceiveNAck() {
   int packetSize = udp.parsePacket();
-  Serial.print("packetSize: ");
-  Serial.println(packetSize);
   if (packetSize) {
     // receive incoming UDP packets
     int len = udp.read(packetBuffer, 1000);
@@ -384,7 +387,7 @@ void netReceiveNAck() {
       encoder["message"] = "AKEX";
 
       serializeJson(encoder, packet);
-      Serial.print("recieved EXEC executing: ");
+      Serial.printf("recieved EXEC executing: ");
 
       udp.beginPacket(gateway, remotePort);
       udp.write(stringToUni8Arr(packet), packet.length());
@@ -444,7 +447,7 @@ String stateToString(CarriageState state) {
     case STOPO: stateStr = "STOPO"; break;
     case OFLN: stateStr = "OFLN"; break;
     case ESTOP: stateStr = "ESTOP"; break;
-    case ERROR: stateStr = "ERR"; break;
+    case ERROR: stateStr = "ERROR"; break;
     case DEAD: stateStr = "DEAD"; break;
   }
   return stateStr;  // Send state over Serial
