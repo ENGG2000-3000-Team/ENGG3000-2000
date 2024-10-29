@@ -51,6 +51,7 @@ public abstract class Connection {
             }
         }
         lastMsgTime = System.currentTimeMillis();
+        System.out.println(name+ " : : "+s);
     }
 
     public JSONObject considerMsgRecent() {

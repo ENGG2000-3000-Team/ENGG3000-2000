@@ -10,7 +10,11 @@ public class Carriage {
     }
 
     public void update(JSONObject cMsg) {
+        try {
         carriageState = cMsg.get("state").toString();
+        }catch(Exception e) {
+            
+        }
     }
 
     public String getState() {

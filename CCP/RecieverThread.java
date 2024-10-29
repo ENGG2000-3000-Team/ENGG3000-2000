@@ -9,6 +9,7 @@ public class RecieverThread implements Runnable{
 
     public void run() {
         while(true) {
+            System.out.println("hello");
             handle.recievePacketAsync();
         }
     }

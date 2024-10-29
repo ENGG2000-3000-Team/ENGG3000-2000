@@ -32,7 +32,6 @@ public class BR17 extends Connection{
             msgJ.put("cmd", msg);
         }else {
             msgJ.put("message", "STATRQ");
-            msgAttempts++;
         }
 
         byte[] buffer = msgJ.toJSONString().getBytes();
@@ -49,13 +48,13 @@ public class BR17 extends Connection{
     public boolean gotAckEx() {
         if(messages == null) return false;
         for(int i=0; i<messages.size(); i++) {
-            if(messages.get(i).get("message").equals("ACKEX")) {
+            if(messages.get(i).get("message").equals("AKEX")) {
                 messages.remove(i);
                 internalSeq++;
                 return true;
             }
         }
-        return false;
+        return true;
     }
 
     public boolean gotINIT() {
@@ -71,7 +70,7 @@ public class BR17 extends Connection{
     }
 
     public boolean gotStateUpdate() {
-        if(messages == null) return false;
+        if(messages == null || messages.isEmpty()) return false;
         for(int i=0; i<messages.size(); i++) {
             if(messages.get(i).get("message").equals("STAT")) {
                 consideringMsg = messages.get(i);
@@ -79,6 +78,13 @@ public class BR17 extends Connection{
                 return true;
             }
         }
+
+        if(messages.get(0).get("message").equals("STAT")) {
+            consideringMsg = messages.get(0);
+            internalSeq++;
+            return true;
+        }
+
         return false;
     }
 }

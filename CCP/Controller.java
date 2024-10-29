@@ -62,13 +62,13 @@ class Controller {
                     cHandler.getBR().considerMsgRecent();
                     System.out.println("BRMsgReceived");
                     currentState = CCPState.BRMsgReceived;
-                } else if ((currL - cHandler.getBR().getlastMsgTime() > 2000000000)) {
+                } else if ((currL - cHandler.getBR().getlastMsgTime() > 2000)) {
                     cHandler.sendSTATRQ();
                     cHandler.getBR().setlastMsgTime(System.currentTimeMillis());
                     System.out.println("SentStateREQ");
                     cHandler.getBR().resetMsgAttempts();
                     currentState = CCPState.SentStateREQ;
-                } else if ((currL - cHandler.getMCP().getlastMsgTime() > 2000)) {
+                } else if ((currL - cHandler.getMCP().getlastMsgTime() > 250000000)) {
                     cHandler.getMCP().setStatus(false);
                     System.out.println("Error");
                     currentState = CCPState.Error;
@@ -88,7 +88,7 @@ class Controller {
                 break;
             case BRMsgReceived:
                 br17.update(cHandler.getBR().viewConsidered());
-                if (br17.getState() == "ERR" || br17.getState() == "OFLN" || br17.getState() == "STOPO" || br17.getState() == "RSLOWC" || br17.getState() == "FFASTC" || br17.getState() == "FSLOWC" || br17.getState() == "STOPC") {
+                if (br17.getState() == "ERR" || br17.getState() == "STOPO" || br17.getState() == "RSLOWC" || br17.getState() == "FFASTC" || br17.getState() == "FSLOWC" || br17.getState() == "STOPC") {
                     cHandler.sendSTAT(br17.getState());
                     System.out.println("SentData");
                     cHandler.getMCP().resetMsgAttempts();
@@ -99,7 +99,6 @@ class Controller {
                 }
                 break;
             case SentInstruction:
-                cHandler.getBR().resetMsgAttempts();
                 if (cHandler.getBR().gotAckEx()) {
                     cHandler.getBR().resetMsgAttempts();
                     System.out.println("Listening");
@@ -108,7 +107,7 @@ class Controller {
                     cHandler.getBR().setStatus(false);
                     System.out.println("Error");
                     currentState = CCPState.Error;
-                } else if (System.currentTimeMillis() - cHandler.getBR().getTimeSent() > 1000) {
+                } else if (System.currentTimeMillis() - cHandler.getBR().getTimeSent() > 2000) {
                     System.out.println(cHandler.getBR().getAttempts());
                     cHandler.sendEXEC(cHandler.getMCP().viewConsidered().get("action").toString());
                 }
@@ -118,11 +117,11 @@ class Controller {
                     cHandler.getBR().resetMsgAttempts();
                     System.out.println("BRMsgReceived");
                     currentState = CCPState.BRMsgReceived;
-                } else if (cHandler.getBR().getAttempts() >= 3) {
+                } else if (cHandler.getBR().getAttempts() > 6) {
                     cHandler.getBR().setStatus(false);
                     System.out.println("Error");
                     currentState = CCPState.Error;
-                } else if (System.currentTimeMillis() - cHandler.getBR().getTimeSent() > 1000) {
+                } else if (System.currentTimeMillis() - cHandler.getBR().getTimeSent() > 3000) {
                     System.out.println(cHandler.getBR().getAttempts());
                     cHandler.sendSTATRQ();
                 }
