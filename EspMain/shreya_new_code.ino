@@ -12,6 +12,7 @@ const int motorPWM = 21;
 const int ledRedPin = 16;
 const int ledGreenPin = 5;
 const int ledBluePin = 17;
+// const int IRpin = 26;
 
 // Define ultrasonic sensor pins
 const int trigPin = 13;
@@ -29,6 +30,12 @@ char netState = 'i';
 unsigned long timeSent;
 unsigned long seqNum = 15000;
 int expectedSeq;
+
+//ir
+// int temp;
+
+long duration;
+float distance;
 
 // States Enumeration
 enum CarriageState {
@@ -60,6 +67,12 @@ void setup() {
   pinMode(ledRedPin, OUTPUT);
   pinMode(ledGreenPin, OUTPUT);
   pinMode(ledBluePin, OUTPUT);
+  // pinMode(IRpin, INPUT_PULLUP);
+
+  //IR
+  // attachInterrupt(IRpin,stopCarriage,FALLING);
+
+
 
   // Start serial communication
   Serial.begin(9600);
@@ -76,11 +89,28 @@ void setup() {
 void loop() {
   // Listen for CCP commands
   netChangeState();
-  float distance = getDistance();
-  if (distance <= 6) carriageState = STOPC;
-  else if (distance <= 20) carriageState = FSLOWC;
 
-  if(Estop) {
+  // temp = digitalRead(26);
+  // Serial.println(temp);
+  // float distance = getDistance();
+  // Send a 10us pulse to trigger the sensor
+  // digitalWrite(trigPin, LOW);
+  // delayMicroseconds(2);
+  // digitalWrite(trigPin, HIGH);
+  // delayMicroseconds(10);
+  // digitalWrite(trigPin, LOW);
+
+  // Read the echoPin and calculate the distance based on the duration
+  // duration = pulseIn(echoPin, HIGH);
+
+  // Convert the time into distance (Speed of sound is 343 meters per second).
+  // Divide by 2 because the sound travels to the object and back.
+  // distance = duration * 0.034 / 2;
+
+  // if (distance <= 6) carriageState = STOPC;
+  // else if (distance <= 20) carriageState = FSLOWC;
+
+  if (Estop) {
     carriageState = ESTOP;
     Estop = false;
   }
@@ -144,7 +174,7 @@ float getDistance() {
 // Functions for Different States
 void initializeCarriage() {
   Serial.println("[INITIALIZATION]: Starting system setup...");
-  setLEDColor(0, 0, 255);  // Blue for initialization
+  setLEDColor(0, 255, 0);  // Green for initialization
   delay(3000);             // Simulate initialization time
   Serial.println("[INITIALIZATION]: Setup complete, transitioning to STOPC...");
   carriageState = STOPC;  // Move to STOPC after initialization
@@ -154,26 +184,26 @@ void initializeCarriage() {
 void stopCarriage() {
   Serial.println("[STOPC]: Carriage stopped, doors closed.");
   stopMotor();
-  setLEDColor(0, 255, 0);  // Green for STOPC
+  setLEDColor(255, 0, 0);  // Red for STOPC
 }
 
 void moveCarriageSlow() {
   Serial.println("[FSLOWC]: Carriage moving forward slowly, doors closed.");
-  moveMotorForward(128);   // Slow speed
-  setLEDColor(0, 0, 255);  // Blue for slow movement
-  delay(2000);             // Simulate movement time
-  Serial.println("[FSLOWC]: Reached destination, transitioning to STOPC...");
-  carriageState = STOPC;  // Transition to STOPC after moving
+  moveMotorForward(128);     // Slow speed
+  setLEDColor(255, 128, 0);  // Orange for slow movement
+  // delay(2000);             // Simulate movement time
+  // Serial.println("[FSLOWC]: Reached destination, transitioning to STOPC...");
+  // carriageState = STOPC;  // Transition to STOPC after moving
   displayState();
 }
 
 void moveCarriageFast() {
   Serial.println("[FFASTC]: Carriage moving forward fast, doors closed.");
   moveMotorForward(255);   // Fast speed
-  setLEDColor(0, 0, 255);  // Blue for fast movement
-  delay(3000);             // Simulate fast movement time
-  Serial.println("[FFASTC]: Reached destination, transitioning to STOPC...");
-  carriageState = STOPC;  // Transition to STOPC after moving
+  setLEDColor(0, 255, 0);  // Green for fast movement
+  // delay(3000);             // Simulate fast movement time
+  // Serial.println("[FFASTC]: Reached destination, transitioning to STOPC...");
+  // carriageState = STOPC;  // Transition to STOPC after moving
   displayState();
 }
 
@@ -181,9 +211,9 @@ void moveBackwardSlow() {
   Serial.println("[RSLOWC]: Carriage moving backward slowly, doors closed.");
   moveMotorBackward(128);    // Slow backward speed
   setLEDColor(255, 128, 0);  // Orange for backward slow
-  delay(2000);               // Simulate backward movement time
-  Serial.println("[RSLOWC]: Reached position, transitioning to STOPC...");
-  carriageState = STOPC;  // Transition to STOPC after moving
+  // delay(2000);               // Simulate backward movement time
+  // Serial.println("[RSLOWC]: Reached position, transitioning to STOPC...");
+  // carriageState = STOPC;  // Transition to STOPC after moving
   displayState();
 }
 
@@ -306,6 +336,7 @@ void stopMotor() {
   analogWrite(motorPWM, 0);
   digitalWrite(motorPin1, LOW);
   digitalWrite(motorPin2, LOW);
+  carriageState = STOPC;
 }
 
 // LED Control Function
@@ -333,7 +364,7 @@ void netChangeState() {
       netReceiveNAck();
       // Heartbeat mechanism for communication integrity
       if (millis() - lastHeartbeatTime > 10000) {
-        Estop = true; 
+        Estop = true;
         netState = 'i';
         lastHeartbeatTime = millis();
       }

@@ -34,7 +34,7 @@ public abstract class Connection {
     }
 
     public void addMessage(JSONObject s) {
-        if(expectedSeq < Integer.valueOf(s.get("sequence_number").toString())) {
+        if(expectedSeq <= Integer.valueOf(s.get("sequence_number").toString())) {
             expectedSeq = Integer.valueOf(s.get("sequence_number").toString());
         }else if(expectedSeq > Integer.valueOf(s.get("sequence_number").toString())) {
             return;
